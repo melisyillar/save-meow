@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="100%" height="100%">
+  <defs>
+    <!-- Background glow -->
+    <radialGradient id="boncukBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff9f5" />
+      <stop offset="100%" stop-color="#f5e8dc" />
+    </radialGradient>
+    <!-- Eye Gradient (Sapphire / Sky Blue) -->
+    <radialGradient id="eyeBlue" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#7dd3fc" />
+      <stop offset="45%" stop-color="#38bdf8" />
+      <stop offset="75%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </radialGradient>
+    <!-- Siamese Mask Gradient -->
+    <radialGradient id="siameseMask" cx="50%" cy="55%" r="60%">
+      <stop offset="0%" stop-color="#5a4233" />
+      <stop offset="65%" stop-color="#785c49" />
+      <stop offset="100%" stop-color="#9a7b66" />
+    </radialGradient>
+    <!-- Cream Fur Gradient -->
+    <linearGradient id="furCream" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="40%" stop-color="#fbf6ee" />
+      <stop offset="100%" stop-color="#f0e4d4" />
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#5a3d28" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Background Circle Badge -->
+  <circle cx="120" cy="120" r="110" fill="url(#boncukBg)" filter="url(#softShadow)" />
+  <circle cx="120" cy="120" r="106" fill="none" stroke="#ebd2be" stroke-width="2.5" stroke-dasharray="6,4" />
+
+  <!-- Ground Shadow -->
+  <ellipse cx="120" cy="205" rx="65" ry="11" fill="#4a3424" opacity="0.14" />
+
+  <!-- 1. Elegant Tail (Dark chocolate brown, gracefully curving behind) -->
+  <path d="M152,170 C190,165 208,125 195,95 C185,75 168,82 172,98 C176,114 186,134 162,152 Z" fill="#604737" />
+
+  <!-- 2. Slim Body (Cream / Ivory coat) -->
+  <path d="M80,185 C70,160 76,130 92,118 C100,105 140,105 148,118 C164,130 170,160 160,185 C152,202 88,202 80,185 Z" fill="url(#furCream)" />
+
+  <!-- 3. Forelegs & White Paws (Mittens) -->
+  <!-- Left Leg (Light mocha shading leading down to pure white paw) -->
+  <path d="M96,150 L94,188 C94,194 108,194 108,188 L106,150 Z" fill="#cbb4a3" />
+  <!-- Left White Mitten Paw -->
+  <ellipse cx="101" cy="192" rx="12" ry="9" fill="#ffffff" />
+  <path d="M95,193 C95,189 107,189 107,193" stroke="#e0d5cb" stroke-width="1.8" fill="none" />
+
+  <!-- Right Leg -->
+  <path d="M134,150 L132,188 C132,194 146,194 146,188 L144,150 Z" fill="#cbb4a3" />
+  <!-- Right White Mitten Paw -->
+  <ellipse cx="139" cy="192" rx="12" ry="9" fill="#ffffff" />
+  <path d="M133,193 C133,189 145,189 145,193" stroke="#e0d5cb" stroke-width="1.8" fill="none" />
+
+  <!-- 4. Pure White Chest & Neck Ruff -->
+  <path d="M102,126 C100,146 108,166 120,170 C132,166 140,146 138,126 C132,136 126,140 120,140 C114,140 108,136 102,126 Z" fill="#ffffff" />
+
+  <!-- 5. EARS: Tall, upright, elegant pointed Siamese ears (#4a372b) -->
+  <!-- Left Ear -->
+  <path d="M78,80 C68,46 80,26 98,34 C104,54 100,76 88,88 Z" fill="#443226" />
+  <!-- Left Inner Ear -->
+  <path d="M84,74 C76,50 86,38 96,42 C98,56 94,70 88,78 Z" fill="#fca5a5" opacity="0.75" />
+  <path d="M88,64 C92,60 96,65 100,60" stroke="#fff1f2" stroke-width="1.8" stroke-linecap="round" />
+
+  <!-- Right Ear -->
+  <path d="M162,80 C172,46 160,26 142,34 C136,54 140,76 152,88 Z" fill="#443226" />
+  <!-- Right Inner Ear -->
+  <path d="M156,74 C164,50 154,38 144,42 C142,56 146,70 152,78 Z" fill="#fca5a5" opacity="0.75" />
+  <path d="M152,64 C148,60 144,65 140,60" stroke="#fff1f2" stroke-width="1.8" stroke-linecap="round" />
+
+  <!-- 6. HEAD BASE (Cream / Ivory) -->
+  <ellipse cx="120" cy="108" rx="42" ry="38" fill="url(#furCream)" />
+
+  <!-- 7. DISTINCTIVE SIAMESE FACE MASK (Warm Mocha-Brown #785c49) -->
+  <!-- Classic heart/oval mask covering center face and muzzle -->
+  <path d="M120,68 C100,68 84,86 86,108 C88,124 94,144 120,146 C146,144 152,124 154,108 C156,86 140,68 120,68 Z" fill="url(#siameseMask)" />
+
+  <!-- Soft gradient feathering into cream cheeks -->
+  <path d="M96,118 C88,114 90,126 98,130" stroke="#a3846e" stroke-width="3" stroke-linecap="round" fill="none" />
+  <path d="M144,118 C152,114 150,126 142,130" stroke="#a3846e" stroke-width="3" stroke-linecap="round" fill="none" />
+
+  <!-- 8. GORGEOUS BRIGHT BLUE EYES (Gök Mavisi / Sapphire) -->
+  <!-- Left Eye Outer Ring -->
+  <ellipse cx="98" cy="104" rx="15" ry="16" fill="#1e1814" />
+  <ellipse cx="98" cy="104" rx="13" ry="14" fill="url(#eyeBlue)" />
+  <!-- Left Pupil -->
+  <ellipse cx="99" cy="104" rx="6" ry="11.5" fill="#082f49" />
+  <!-- Specular Sparkles -->
+  <circle cx="94" cy="98" r="4.2" fill="#ffffff" />
+  <circle cx="103" cy="109" r="2" fill="#ffffff" />
+
+  <!-- Right Eye Outer Ring -->
+  <ellipse cx="142" cy="104" rx="15" ry="16" fill="#1e1814" />
+  <ellipse cx="142" cy="104" rx="13" ry="14" fill="url(#eyeBlue)" />
+  <!-- Right Pupil -->
+  <ellipse cx="141" cy="104" rx="6" ry="11.5" fill="#082f49" />
+  <!-- Specular Sparkles -->
+  <circle cx="138" cy="98" r="4.2" fill="#ffffff" />
+  <circle cx="147" cy="109" r="2" fill="#ffffff" />
+
+  <!-- 9. NOSE & SWEET SMILE -->
+  <!-- Dark chocolate nose -->
+  <path d="M115,122 L125,122 C127,122 128,124 126,126 L121,130.5 C120.5,131 119.5,131 119,130.5 L114,126 C112,124 113,122 115,122 Z" fill="#2d1d13" />
+
+  <!-- Mouth -->
+  <path d="M120,130.5 L120,134.5 M120,134.5 C116,138 109,137 107,132 M120,134.5 C124,138 131,137 133,132" stroke="#231710" stroke-width="2" stroke-linecap="round" fill="none" />
+
+  <!-- 10. DELICATE WHITE WHISKERS -->
+  <g stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.95">
+    <!-- Left Whiskers -->
+    <path d="M106,128 C84,124 60,128 44,132" />
+    <path d="M105,132 C82,132 58,139 46,146" />
+    <path d="M106,136 C86,140 66,150 54,160" />
+    <!-- Right Whiskers -->
+    <path d="M134,128 C156,124 180,128 196,132" />
+    <path d="M135,132 C158,132 182,139 194,146" />
+    <path d="M134,136 C154,140 174,150 186,160" />
+  </g>
+
+  <!-- Cute Name Label Pill at Bottom -->
+  <g transform="translate(120, 218)">
+    <rect x="-42" y="-12" width="84" height="22" rx="11" fill="#785c49" />
+    <text x="0" y="3" font-family="'Fredoka One', 'Quicksand', sans-serif" font-size="12" font-weight="bold" fill="#bae6fd" text-anchor="middle">BONCUK 🐾</text>
+  </g>
+</svg>

@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="100%" height="100%">
+  <defs>
+    <!-- Background glow -->
+    <radialGradient id="muezzaBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff8f0" />
+      <stop offset="100%" stop-color="#f1e6da" />
+    </radialGradient>
+    <!-- Eye Gradient (Amber/Golden Yellow) -->
+    <radialGradient id="eyeAmber" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="50%" stop-color="#eab308" />
+      <stop offset="100%" stop-color="#ca8a04" />
+    </radialGradient>
+    <!-- Fur Gradient -->
+    <linearGradient id="furGrey" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#808d9b" />
+      <stop offset="50%" stop-color="#697684" />
+      <stop offset="100%" stop-color="#54606e" />
+    </linearGradient>
+    <linearGradient id="maneGrey" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#9aa7b5" />
+      <stop offset="100%" stop-color="#707d8b" />
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#3d4650" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <!-- Background Circle Badge -->
+  <circle cx="120" cy="120" r="110" fill="url(#muezzaBg)" filter="url(#softShadow)" />
+  <circle cx="120" cy="120" r="106" fill="none" stroke="#e6d5c3" stroke-width="2.5" stroke-dasharray="6,4" />
+
+  <!-- Ground Shadow -->
+  <ellipse cx="120" cy="205" rx="75" ry="12" fill="#3a414a" opacity="0.16" />
+
+  <!-- 1. Fluffy Lion Mane / Lower Chest Fur -->
+  <!-- Back fluffy tufts -->
+  <path d="M50,175 C35,160 38,135 52,120 C42,105 48,88 64,80 C68,60 88,52 105,58 C115,50 135,50 145,58 C162,52 182,60 186,80 C202,88 208,105 198,120 C212,135 215,160 200,175 C210,195 185,210 165,202 C150,212 130,214 120,212 C110,214 90,212 75,202 C55,210 30,195 50,175 Z" fill="#586472" />
+
+  <!-- Mid chest fluff (Lighter smoke grey) -->
+  <path d="M62,170 C50,155 56,132 70,122 C65,110 72,95 86,90 C96,75 120,72 134,80 C146,74 165,78 172,92 C184,98 190,112 184,124 C196,136 195,158 184,170 C190,188 170,198 155,194 C140,202 125,202 120,200 C115,202 100,202 85,194 C70,198 50,188 62,170 Z" fill="url(#furGrey)" />
+
+  <!-- 2. Big Fluffy Tail (curling behind) -->
+  <path d="M175,170 C215,175 230,135 210,105 C198,90 180,95 182,110 C184,125 195,135 180,150 Z" fill="#697684" />
+  <path d="M185,155 C205,150 215,128 202,112" stroke="#8b99a8" stroke-width="3" stroke-linecap="round" fill="none" />
+
+  <!-- 3. Fluffy Forepaws -->
+  <ellipse cx="98" cy="195" rx="16" ry="12" fill="#54606e" />
+  <ellipse cx="142" cy="195" rx="16" ry="12" fill="#54606e" />
+  <!-- Cute Paw Tufts -->
+  <path d="M90,196 C90,191 106,191 106,196" stroke="#7a8897" stroke-width="2" fill="none" />
+  <path d="M134,196 C134,191 150,191 150,196" stroke="#7a8897" stroke-width="2" fill="none" />
+
+  <!-- 4. Front Chest Fluff Bib (Soft layered ash mane) -->
+  <path d="M90,140 C85,160 92,185 120,192 C148,185 155,160 150,140 C140,155 130,162 120,162 C110,162 100,155 90,140 Z" fill="url(#maneGrey)" />
+  <path d="M102,148 C100,165 110,178 120,182 C130,178 140,165 138,148 C132,158 125,162 120,162 C115,162 108,158 102,148 Z" fill="#b0becb" opacity="0.8" />
+
+  <!-- 5. EARS -->
+  <!-- Left Ear -->
+  <path d="M72,82 C65,55 78,42 94,48 C98,62 95,78 86,88 Z" fill="#4d5763" />
+  <path d="M78,76 C74,58 84,50 92,54 C94,64 92,74 86,80 Z" fill="#f87171" opacity="0.65" />
+  <!-- Ear Tuft Fur -->
+  <path d="M80,68 C86,65 92,70 96,66 M82,74 C88,71 94,76 98,72" stroke="#d1dbe5" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Right Ear -->
+  <path d="M168,82 C175,55 162,42 146,48 C142,62 145,78 154,88 Z" fill="#4d5763" />
+  <path d="M162,76 C166,58 156,50 148,54 C146,64 148,74 154,80 Z" fill="#f87171" opacity="0.65" />
+  <!-- Ear Tuft Fur -->
+  <path d="M160,68 C154,65 148,70 144,66 M158,74 C152,71 146,76 142,72" stroke="#d1dbe5" stroke-width="2" stroke-linecap="round" />
+
+  <!-- 6. ROUND FLUFFY HEAD -->
+  <ellipse cx="120" cy="112" rx="46" ry="40" fill="url(#furGrey)" />
+  <!-- Chubby Cheek Fluff Tufts -->
+  <path d="M68,118 C52,112 55,130 68,136 C56,138 60,150 78,148 C66,155 78,162 92,154" fill="#697684" />
+  <path d="M172,118 C188,112 185,130 172,136 C184,138 180,150 162,148 C174,155 162,162 148,154" fill="#697684" />
+
+  <!-- Lighter Cheek highlights -->
+  <ellipse cx="88" cy="126" rx="16" ry="14" fill="#808e9d" />
+  <ellipse cx="152" cy="126" rx="16" ry="14" fill="#808e9d" />
+
+  <!-- 7. EYES: INTENSE LUMINOUS AMBER-GOLDEN YELLOW -->
+  <!-- Left Eye Outer Socket -->
+  <ellipse cx="96" cy="106" rx="16" ry="17" fill="#1e252d" />
+  <ellipse cx="96" cy="106" rx="14" ry="15" fill="url(#eyeAmber)" />
+  <!-- Left Pupil -->
+  <ellipse cx="97" cy="106" rx="6.5" ry="12.5" fill="#0f141a" />
+  <!-- Left Highlights -->
+  <circle cx="92" cy="100" r="4.5" fill="#ffffff" />
+  <circle cx="101" cy="111" r="2.2" fill="#ffffff" />
+
+  <!-- Right Eye Outer Socket -->
+  <ellipse cx="144" cy="106" rx="16" ry="17" fill="#1e252d" />
+  <ellipse cx="144" cy="106" rx="14" ry="15" fill="url(#eyeAmber)" />
+  <!-- Right Pupil -->
+  <ellipse cx="143" cy="106" rx="6.5" ry="12.5" fill="#0f141a" />
+  <!-- Right Highlights -->
+  <circle cx="140" cy="100" r="4.5" fill="#ffffff" />
+  <circle cx="149" cy="111" r="2.2" fill="#ffffff" />
+
+  <!-- 8. NOSE & MUZZLE -->
+  <!-- Muzzle round pads -->
+  <ellipse cx="112" cy="132" rx="11" ry="8" fill="#758290" />
+  <ellipse cx="128" cy="132" rx="11" ry="8" fill="#758290" />
+
+  <!-- Slate dark nose -->
+  <path d="M114,123 L126,123 C128,123 129,125 127,127 L122,132 C121,133 119,133 118,132 L113,127 C111,125 112,123 114,123 Z" fill="#2d353e" />
+
+  <!-- Cute Cat Smile / Mouth -->
+  <path d="M120,132 L120,136 M120,136 C116,140 108,139 106,134 M120,136 C124,140 132,139 134,134" stroke="#1f252c" stroke-width="2.2" stroke-linecap="round" fill="none" />
+
+  <!-- 9. WHISKERS (Long, graceful white whiskers) -->
+  <g stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" opacity="0.9">
+    <!-- Left Whiskers -->
+    <path d="M104,130 C80,126 55,130 38,135" />
+    <path d="M103,134 C78,135 52,143 40,150" />
+    <path d="M104,138 C82,143 60,155 46,165" />
+    <!-- Right Whiskers -->
+    <path d="M136,130 C160,126 185,130 202,135" />
+    <path d="M137,134 C162,135 188,143 200,150" />
+    <path d="M136,138 C158,143 180,155 194,165" />
+  </g>
+
+  <!-- Cute Name Label Pill at Bottom -->
+  <g transform="translate(120, 218)">
+    <rect x="-42" y="-12" width="84" height="22" rx="11" fill="#4d5a68" />
+    <text x="0" y="3" font-family="'Fredoka One', 'Quicksand', sans-serif" font-size="12" font-weight="bold" fill="#fef08a" text-anchor="middle">MÜEZZA 🐾</text>
+  </g>
+</svg>
