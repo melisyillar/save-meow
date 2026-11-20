@@ -506,10 +506,11 @@ const SpriteRenderer = {
       config = {
         gender: heroConfigOrGender,
         hairStyle: heroConfigOrGender === 'boy' ? 'messy_short' : 'long_wavy',
-        top: heroConfigOrGender === 'boy' ? 'hoodie_mint' : 'blouse_blossom',
-        bottom: heroConfigOrGender === 'boy' ? 'shorts_cozy' : 'skirt_pleated',
+        top: heroConfigOrGender === 'boy' ? 'shirt_plaid' : 'blouse_blossom',
+        bottom: heroConfigOrGender === 'boy' ? 'jeans_soft' : 'skirt_pleated',
         shoes: heroConfigOrGender === 'boy' ? 'sneakers' : 'mary_janes',
-        hairAcc: heroConfigOrGender === 'boy' ? 'none' : 'flower_clip'
+        hairAcc: heroConfigOrGender === 'boy' ? 'none' : 'flower_clip',
+        neckAcc: 'none'
       };
     }
     if (window.HumanRenderer) {

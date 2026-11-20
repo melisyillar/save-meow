@@ -231,13 +231,30 @@
       name: 'Maya', gender: 'girl', skinTone: 'peach', hairStyle: 'long_wavy',
       hairColor: 'brown', eyeColor: 'brown', eyeShape: 'classic', eyebrowShape: 'soft',
       top: 'blouse_blossom', bottom: 'skirt_pleated', outfit: 'none',
-      shoes: 'mary_janes', hairAcc: 'flower_clip', hat: 'none', glasses: 'none'
+      shoes: 'mary_janes', hairAcc: 'flower_clip', hat: 'none', glasses: 'none', neckAcc: 'none'
     };
-    const cfg = { ...base, ...(heroConfig || {}) };
-    const skin = WS ? WS.getPalette(WS.SKIN_TONES, cfg.skinTone) : { base: '#fad2b6', shadow: '#dfa27f', blush: '#f28ca6', outline: '#6e4532' };
-    const hair = WS ? WS.getPalette(WS.HAIR_COLORS, cfg.hairColor) : { base: '#7c4f33', light: '#a6714d', dark: '#54331f', outline: '#3b2214' };
-    const eye = WS ? WS.getPalette(WS.EYE_COLORS, cfg.eyeColor) : { deep: '#3f210e', mid: '#784624', glow: '#b87a46' };
-    return { cfg, skin, hair, eye };
+    const merged = { ...base, ...(heroConfig || {}) };
+    const g = merged.gender === 'boy' ? 'boy' : 'girl';
+    const gDef = WS ? WS.getGenderDefaults(g) : base;
+
+    // Defense-in-depth: strictly prevent incompatible gender items from ever drawing!
+    if (WS) {
+      if (!WS.isSlotValueAllowedForGender('hairStyle', merged.hairStyle, g)) merged.hairStyle = gDef.hairStyle;
+      if (!WS.isSlotValueAllowedForGender('top', merged.top, g)) merged.top = gDef.top;
+      if (!WS.isSlotValueAllowedForGender('bottom', merged.bottom, g)) merged.bottom = gDef.bottom;
+      if (!WS.isSlotValueAllowedForGender('outfit', merged.outfit, g)) merged.outfit = 'none';
+      if (!WS.isSlotValueAllowedForGender('shoes', merged.shoes, g)) merged.shoes = gDef.shoes;
+      if (!WS.isSlotValueAllowedForGender('hairAcc', merged.hairAcc, g)) merged.hairAcc = 'none';
+      if (!WS.isSlotValueAllowedForGender('hat', merged.hat, g)) merged.hat = 'none';
+      if (!WS.isSlotValueAllowedForGender('glasses', merged.glasses, g)) merged.glasses = 'none';
+      if (!WS.isSlotValueAllowedForGender('neckAcc', merged.neckAcc, g)) merged.neckAcc = 'none';
+    }
+    if (g === 'boy') merged.hairAcc = 'none';
+
+    const skin = WS ? WS.getPalette(WS.SKIN_TONES, merged.skinTone) : { base: '#fad2b6', shadow: '#dfa27f', blush: '#f28ca6', outline: '#6e4532' };
+    const hair = WS ? WS.getPalette(WS.HAIR_COLORS, merged.hairColor) : { base: '#7c4f33', light: '#a6714d', dark: '#54331f', outline: '#3b2214' };
+    const eye = WS ? WS.getPalette(WS.EYE_COLORS, merged.eyeColor) : { deep: '#3f210e', mid: '#784624', glow: '#b87a46' };
+    return { cfg: merged, skin, hair, eye };
   }
 
   // =========================================================================
@@ -246,8 +263,27 @@
   function drawBackGarmentExtras(ctx, cfg, pose, animTimer) {
     const sway = pose.hairSway * 26;
 
-    // Fairy Wings (Level 10 Special Outfit)
-    if (cfg.outfit === 'outfit_fairy_garden') {
+    // Level 10 Special Outfit Back: Fairy Wings (Girl) vs Woodland Ranger Cape (Boy)!
+    if (cfg.outfit === 'outfit_fairy_garden' && cfg.gender === 'boy') {
+      // Flowing woodland leaf-green ranger cloak behind boy!
+      ctx.save();
+      const rg = ctx.createLinearGradient(-15, -14, -36 - sway, 68);
+      rg.addColorStop(0, '#5a946c');
+      rg.addColorStop(1, '#84bf95');
+      ctx.fillStyle = rg;
+      ctx.strokeStyle = '#335c40';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-14, -15);
+      ctx.lineTo(14, -15);
+      ctx.bezierCurveTo(22, 10, 18 - sway * 0.4, 52, 12 - sway * 0.6, 68);
+      ctx.quadraticCurveTo(-8 - sway * 0.8, 76, -36 - sway, 64);
+      ctx.bezierCurveTo(-32 - sway * 0.5, 34, -24, 6, -14, -15);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    } else if (cfg.outfit === 'outfit_fairy_garden') {
       const flutter = Math.sin(animTimer * 8) * 0.12;
       ctx.save();
       ctx.translate(-12, -2);
@@ -298,14 +334,19 @@
         grad.addColorStop(0, '#4f4082');
         grad.addColorStop(1, '#7c65b8');
       } else if (isRoyal) {
-        grad.addColorStop(0, '#c25d7d');
-        grad.addColorStop(1, '#e88ca7');
+        if (cfg.gender === 'boy') {
+          grad.addColorStop(0, '#475eb5');
+          grad.addColorStop(1, '#768ee0');
+        } else {
+          grad.addColorStop(0, '#c25d7d');
+          grad.addColorStop(1, '#e88ca7');
+        }
       } else {
         grad.addColorStop(0, '#8570bd');
         grad.addColorStop(1, '#b6a0ea');
       }
       ctx.fillStyle = grad;
-      ctx.strokeStyle = isWizard ? '#2f2354' : (isRoyal ? '#7d344c' : '#524080');
+      ctx.strokeStyle = isWizard ? '#2f2354' : (isRoyal ? (cfg.gender === 'boy' ? '#2a3875' : '#7d344c') : '#524080');
       ctx.lineWidth = 2;
 
       ctx.beginPath();
@@ -621,15 +662,17 @@
       ctx.fill();
       ctx.stroke();
     } else if (style === 'long_boy') {
-      // Shoulder-length layered adventure-boy hair with outward flicked tips
+      // Feathered collar-length adventure-boy hair with lively flicked nape layers
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.moveTo(-26, -76);
-      ctx.bezierCurveTo(-35, -48, -36 - sway * 0.35, -20, -34 - sway * 0.5, -2);
-      ctx.quadraticCurveTo(-24 - sway * 0.4, -6, -18 - sway * 0.35, 2);
-      ctx.quadraticCurveTo(-8 - sway * 0.3, -8, 4 - sway * 0.2, -4);
-      ctx.quadraticCurveTo(18 - sway * 0.15, -2, 26 - sway * 0.1, -12);
-      ctx.bezierCurveTo(30, -30, 30, -56, 24, -74);
+      ctx.moveTo(-25, -76);
+      ctx.bezierCurveTo(-36, -54, -36 - sway * 0.3, -28, -32 - sway * 0.4, -14);
+      ctx.lineTo(-22 - sway * 0.3, -22);
+      ctx.lineTo(-14 - sway * 0.25, -12);
+      ctx.lineTo(-4 - sway * 0.2, -20);
+      ctx.lineTo(10 - sway * 0.15, -14);
+      ctx.lineTo(20 - sway * 0.1, -22);
+      ctx.bezierCurveTo(28, -36, 29, -58, 24, -74);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
@@ -689,15 +732,27 @@
   // 5. ARTICULATED LIMBS (Legs + Shoes, Arms + Sleeves + Hands)
   // =========================================================================
   function getSleeveStyle(cfg) {
+    const isBoy = cfg.gender === 'boy';
     if (cfg.outfit === 'outfit_cat_onesie') return { color: '#ffcca8', cuff: '#fff6ea', outline: '#8c5334', length: 'long' };
-    if (cfg.outfit === 'outfit_fairy_garden') return { color: '#a8deb8', cuff: '#fbc8d9', outline: '#487a58', length: 'puff' };
-    if (cfg.outfit === 'outfit_royal_storybook') return { color: '#8796d8', cuff: '#f6cf65', outline: '#414c82', length: 'puff_long' };
-    if (cfg.outfit === 'outfit_star_wizard') return { color: '#615099', cuff: '#f6cf65', outline: '#32255c', length: 'wide_long' };
+    if (cfg.outfit === 'outfit_fairy_garden') {
+      return isBoy
+        ? { color: '#8ac99d', cuff: '#5a946c', outline: '#335c40', length: 'long' }
+        : { color: '#a8deb8', cuff: '#fbc8d9', outline: '#487a58', length: 'puff' };
+    }
+    if (cfg.outfit === 'outfit_royal_storybook') {
+      return isBoy
+        ? { color: '#7f8fd4', cuff: '#f6cf65', outline: '#3b4680', length: 'long' }
+        : { color: '#8796d8', cuff: '#f6cf65', outline: '#414c82', length: 'puff_long' };
+    }
+    if (cfg.outfit === 'outfit_star_wizard') return { color: '#615099', cuff: '#f6cf65', outline: '#32255c', length: isBoy ? 'long' : 'wide_long' };
 
     switch (cfg.top) {
       case 'tee_pastel': return { color: '#c8e6fa', cuff: '#ffffff', outline: '#4a7391', length: 'short' };
       case 'hoodie_mint': return { color: '#b7e6cf', cuff: '#96cfb4', outline: '#437860', length: 'long' };
       case 'blouse_blossom': return { color: '#fbd1df', cuff: '#ffffff', outline: '#99546c', length: 'puff' };
+      case 'shirt_plaid': return { color: '#b4d8f2', cuff: '#e8f4fc', outline: '#426b8c', length: 'mid' };
+      case 'jacket_denim': return { color: '#7ca0cc', cuff: '#a6c2e3', outline: '#3c587a', length: 'long' };
+      case 'jacket_bomber': return { color: '#fff3e0', cuff: '#77b397', outline: '#467560', length: 'long' };
       case 'cardigan_berry': return { color: '#de8ca4', cuff: '#c7708b', outline: '#7d3a50', length: 'long' };
       case 'vest_explorer': return { color: '#fff5e6', cuff: '#ead4b8', outline: '#7a593c', length: 'mid' };
       case 'sailor_top': return { color: '#ffffff', cuff: '#8eb6e8', outline: '#4b6891', length: 'short' };
@@ -825,22 +880,33 @@
   }
 
   function getLegClothing(cfg) {
+    const isBoy = cfg.gender === 'boy';
     if (cfg.outfit === 'outfit_cat_onesie') return { type: 'pants', color: '#f2e0d0', outline: '#8c5334', cuff: '#fff5eb' };
-    if (cfg.outfit === 'outfit_fairy_garden') return { type: 'tights', color: '#fdf5ec', outline: '#7a6354' };
-    if (cfg.outfit === 'outfit_royal_storybook') return { type: 'tights', color: '#fff8f0', outline: '#6d648a' };
+    if (cfg.outfit === 'outfit_fairy_garden') {
+      return isBoy
+        ? { type: 'pants', color: '#5b8266', outline: '#2e4d37', cuff: '#81ab8d' }
+        : { type: 'tights', color: '#fdf5ec', outline: '#7a6354' };
+    }
+    if (cfg.outfit === 'outfit_royal_storybook') {
+      return isBoy
+        ? { type: 'pants', color: '#5f6da8', outline: '#323c6e', cuff: '#f6cf65' }
+        : { type: 'tights', color: '#fff8f0', outline: '#6d648a' };
+    }
     if (cfg.outfit === 'outfit_star_wizard') return { type: 'pants', color: '#463a75', outline: '#281f4d' };
 
     switch (cfg.bottom) {
       case 'jeans_soft': return { type: 'pants', color: '#87a6cc', outline: '#425d80', cuff: '#bdd3eb' };
+      case 'chinos_warm': return { type: 'pants', color: '#d9b88f', outline: '#7a5a35', cuff: '#ecd4b5' };
+      case 'cargo_pants': return { type: 'pants', color: '#94ad86', outline: '#4b613f', cuff: '#b5cca8', cargo: true };
       case 'overalls_garden': return { type: 'pants', color: '#94c2b6', outline: '#436e63', cuff: '#bfe0d7' };
       case 'adventurer_pants': return { type: 'pants', color: '#8b79ab', outline: '#4c3e69', cuff: '#c4b4e0' };
       case 'shorts_cozy': return { type: 'shorts', color: '#dec29c', outline: '#7c5d3b', sock: '#fff8ef' };
       case 'tulip_skirt': return { type: 'skirt_leg', sock: '#fff5f8' };
-      default: return { type: 'skirt_leg', sock: '#fffaf4' }; // skirt_pleated
+      default: return isBoy ? { type: 'pants', color: '#87a6cc', outline: '#425d80', cuff: '#bdd3eb' } : { type: 'skirt_leg', sock: '#fffaf4' };
     }
   }
 
-  function drawShoe(ctx, shoeId, isFront) {
+  function drawShoe(ctx, shoeId, isFront, isBoy = false) {
     ctx.save();
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
@@ -877,6 +943,29 @@
       ctx.beginPath();
       ctx.arc(4, 1.5, 2, 0, Math.PI * 2);
       ctx.fill();
+    } else if (shoeId === 'loafers_classic') {
+      // Classic smart chestnut-brown boy slip-on loafers
+      ctx.fillStyle = '#8c5a3c';
+      ctx.strokeStyle = '#4d2e1b';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-7, -3);
+      ctx.lineTo(6, -3);
+      ctx.bezierCurveTo(16, -2, 19, 4, 17, 10);
+      ctx.lineTo(-8, 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // Cream trim sole
+      ctx.fillStyle = '#f5e6d3';
+      rr(ctx, -9, 7.5, 26.5, 3.8, 1.8);
+      ctx.fill();
+      ctx.stroke();
+      // Loafer stitched tongue band
+      ctx.fillStyle = '#a8704e';
+      rr(ctx, 1, -1, 7, 4, 2);
+      ctx.fill();
+      ctx.stroke();
     } else if (shoeId === 'boots_cozy') {
       // Warm suede cuffed ankle boots with fluffy trim
       ctx.fillStyle = '#b9825c';
@@ -920,7 +1009,7 @@
       ctx.fillStyle = '#ffffff';
       rr(ctx, -9, 8, 26, 4, 2);
       ctx.fill();
-      ctx.fillStyle = '#f472b6';
+      ctx.fillStyle = isBoy ? '#5ba4db' : '#f472b6';
       ctx.fillRect(-7.5, -13, 14, 3.5);
       // Gloss shine
       ctx.fillStyle = 'rgba(255,255,255,0.6)';
@@ -1078,15 +1167,15 @@
       rr(ctx, -6, calfLen - sockH, 12, sockH + 1, 4);
       ctx.fill();
       ctx.stroke();
-      // Cute pastel sock top stripe
-      ctx.fillStyle = '#f8a5c2';
+      // Cute pastel sock top stripe (sky blue for boy, rose for girl)
+      ctx.fillStyle = cfg.gender === 'boy' ? '#7bb8e8' : '#f8a5c2';
       ctx.fillRect(-5.5, calfLen - sockH + 3, 11, 2.5);
     }
 
     // Foot / Shoe
     ctx.translate(0, calfLen);
     ctx.rotate(-(hipAngle + kneeAngle) * 0.45);
-    drawShoe(ctx, cfg.shoes, isFront);
+    drawShoe(ctx, cfg.shoes, isFront, cfg.gender === 'boy');
 
     ctx.restore();
   }
@@ -1196,6 +1285,43 @@
       ctx.beginPath();
       ctx.arc(3, 24.2, 2.2, 0, Math.PI * 2);
       ctx.fill();
+    } else if (cfg.bottom === 'chinos_warm') {
+      // Tailored warm sand-caramel chinos with leather belt
+      ctx.fillStyle = '#d9b88f';
+      ctx.strokeStyle = '#7a5a35';
+      ctx.lineWidth = 2;
+      rr(ctx, -17.5, 22, 35, 22, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#8f5b3a';
+      ctx.strokeStyle = '#4f2f1b';
+      rr(ctx, -17.5, 20.5, 35, 6, 2.5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#f6cf65';
+      rr(ctx, 0, 20, 7, 7, 1.5);
+      ctx.fill();
+      ctx.stroke();
+    } else if (cfg.bottom === 'cargo_pants') {
+      // Level 6 Boy Reward: Woodland Olive Cargo Pants with side flap pockets!
+      ctx.fillStyle = '#94ad86';
+      ctx.strokeStyle = '#4b613f';
+      ctx.lineWidth = 2;
+      rr(ctx, -18, 22, 36, 24, 8);
+      ctx.fill();
+      ctx.stroke();
+      // Adventure belt
+      ctx.fillStyle = '#6e4c30';
+      ctx.strokeStyle = '#3d2817';
+      rr(ctx, -18, 20.5, 36, 6.2, 2.5);
+      ctx.fill();
+      ctx.stroke();
+      // Dual cargo pocket flaps
+      ctx.fillStyle = '#819c73';
+      ctx.strokeStyle = '#4b613f';
+      ctx.lineWidth = 1.6;
+      rr(ctx, -16, 30, 10, 9, 2.5); ctx.fill(); ctx.stroke();
+      rr(ctx, 6, 30, 10, 9, 2.5); ctx.fill(); ctx.stroke();
     } else if (cfg.bottom === 'shorts_cozy') {
       ctx.fillStyle = '#dec29c';
       ctx.strokeStyle = '#7c5d3b';
@@ -1310,7 +1436,51 @@
     }
 
     if (cfg.outfit === 'outfit_fairy_garden') {
-      // Level 10: Enchanted Woodland Fairy Costume (petal-layered tunic/dress!)
+      if (!isGirl) {
+        // Level 10 BOY: "Orman Muhafızı Seti" — Woodland Ranger Tunic (NO fairy dress!)
+        const g = ctx.createLinearGradient(0, -16, 0, 48);
+        g.addColorStop(0, '#9bd6ac');
+        g.addColorStop(1, '#68a87c');
+        ctx.fillStyle = g;
+        ctx.strokeStyle = '#335c40';
+        ctx.lineWidth = 2.1;
+
+        ctx.beginPath();
+        ctx.moveTo(-shW, -13);
+        ctx.quadraticCurveTo(0, -17, shW, -13);
+        ctx.lineTo(20, 43);
+        ctx.quadraticCurveTo(0, 48, -20, 43);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Warm woodland leather belt & golden acorn buckle
+        ctx.fillStyle = '#8c5a3c';
+        ctx.strokeStyle = '#4d2e1b';
+        ctx.lineWidth = 1.8;
+        rr(ctx, -18.5, 19, 37, 7, 3);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#f6cf65';
+        ctx.beginPath();
+        ctx.arc(2, 22.5, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Leaf collar & ranger lapel clasp
+        ctx.fillStyle = '#d9f2e1';
+        ctx.strokeStyle = '#335c40';
+        ctx.beginPath();
+        ctx.moveTo(-12, -14); ctx.lineTo(-4, -2); ctx.lineTo(0, -9);
+        ctx.lineTo(4, -2); ctx.lineTo(12, -14);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+
+      // Level 10 GIRL: Enchanted Woodland Fairy Costume (petal-layered dress!)
       const g = ctx.createLinearGradient(0, -16, 0, 58);
       g.addColorStop(0, '#c8f0d4');
       g.addColorStop(0.55, '#9cd9b1');
@@ -1446,7 +1616,7 @@
     }
 
     if (cfg.outfit === 'outfit_star_wizard') {
-      // Level 20: Celestial Starlight Wizard Robe!
+      // Level 20: Celestial Starlight Wizard (Tailored Tunic for Boy / Flowing Robe for Girl!)
       const g = ctx.createLinearGradient(0, -16, 0, 68);
       g.addColorStop(0, '#5a4991');
       g.addColorStop(0.6, '#6d58ad');
@@ -1455,16 +1625,27 @@
       ctx.strokeStyle = '#2d2057';
       ctx.lineWidth = 2.2;
 
-      ctx.beginPath();
-      ctx.moveTo(-shW, -14);
-      ctx.quadraticCurveTo(0, -18, shW, -14);
-      ctx.lineTo(18, 22);
-      ctx.bezierCurveTo(24, 42, 27 + sway * 0.3, 58, 25 + sway * 0.4, 67);
-      ctx.quadraticCurveTo(0 + sway * 0.3, 73, -26 + sway * 0.5, 66);
-      ctx.bezierCurveTo(-26 + sway * 0.3, 54, -22, 36, -17, 22);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      if (isGirl) {
+        ctx.beginPath();
+        ctx.moveTo(-shW, -14);
+        ctx.quadraticCurveTo(0, -18, shW, -14);
+        ctx.lineTo(18, 22);
+        ctx.bezierCurveTo(24, 42, 27 + sway * 0.3, 58, 25 + sway * 0.4, 67);
+        ctx.quadraticCurveTo(0 + sway * 0.3, 73, -26 + sway * 0.5, 66);
+        ctx.bezierCurveTo(-26 + sway * 0.3, 54, -22, 36, -17, 22);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(-shW, -14);
+        ctx.quadraticCurveTo(0, -18, shW, -14);
+        ctx.lineTo(20, 44);
+        ctx.quadraticCurveTo(0, 49, -20, 44);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
 
       // Golden crescent & constellation waist sash
       ctx.fillStyle = '#f6cf65';
@@ -1474,13 +1655,20 @@
       ctx.fill();
       ctx.stroke();
 
-      // Glowing golden hem border & stars
+      // Glowing golden hem border
       ctx.strokeStyle = '#f6cf65';
       ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(-24 + sway * 0.45, 61);
-      ctx.quadraticCurveTo(0 + sway * 0.3, 67, 23 + sway * 0.35, 61);
-      ctx.stroke();
+      if (isGirl) {
+        ctx.beginPath();
+        ctx.moveTo(-24 + sway * 0.45, 61);
+        ctx.quadraticCurveTo(0 + sway * 0.3, 67, 23 + sway * 0.35, 61);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(-19, 41);
+        ctx.quadraticCurveTo(0, 45, 19, 41);
+        ctx.stroke();
+      }
 
       // Crescent moon brooch at collar
       ctx.fillStyle = '#fde68a';
@@ -1541,6 +1729,86 @@
       ctx.moveTo(-4, -10); ctx.quadraticCurveTo(-5, -1, -4, 6);
       ctx.moveTo(5, -10); ctx.quadraticCurveTo(6, -1, 5, 5);
       ctx.stroke();
+    } else if (cfg.top === 'shirt_plaid') {
+      // Boy Starter: Crisp Pastel Sky Checkered Collared Shirt!
+      drawBaseBody('#cde4f7', '#426b8c', 27);
+      // Soft checkered plaid stripes
+      ctx.strokeStyle = 'rgba(110, 158, 199, 0.42)';
+      ctx.lineWidth = 2.2;
+      [-9, 1, 10].forEach(px => {
+        ctx.beginPath(); ctx.moveTo(px, -12); ctx.lineTo(px, 26); ctx.stroke();
+      });
+      [-2, 9, 19].forEach(py => {
+        ctx.beginPath(); ctx.moveTo(-16, py); ctx.lineTo(16, py); ctx.stroke();
+      });
+      // Classic folded shirt collar
+      ctx.fillStyle = '#edf6fc';
+      ctx.strokeStyle = '#426b8c';
+      ctx.lineWidth = 1.7;
+      ctx.beginPath(); ctx.moveTo(-11, -14); ctx.lineTo(-2, -6); ctx.lineTo(-9, -4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(11, -14); ctx.lineTo(2, -6); ctx.lineTo(9, -4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      // Chest pocket & tiny buttons
+      ctx.fillStyle = '#b4d8f2';
+      rr(ctx, 5, 2, 8.5, 9, 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      [1, 10, 19].forEach(by => {
+        ctx.beginPath(); ctx.arc(0.5, by, 1.7, 0, Math.PI * 2); ctx.fill();
+      });
+    } else if (cfg.top === 'jacket_denim') {
+      // Boy Starter: Cool Pastel Denim Jacket over Cream Tee!
+      drawBaseBody('#fff6ea', '#8a6c52', 27);
+      // Open left & right denim panels
+      ctx.fillStyle = '#7ca0cc';
+      ctx.strokeStyle = '#3c587a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-shW, -13); ctx.lineTo(-5, -14); ctx.lineTo(-4, 28); ctx.lineTo(-(wW + 3), 28); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(shW, -13); ctx.lineTo(7, -14); ctx.lineTo(7, 28); ctx.lineTo(wW + 3, 28); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Folded denim collar lapels & flap pockets
+      ctx.fillStyle = '#97b8e0';
+      ctx.beginPath(); ctx.moveTo(-12, -14); ctx.lineTo(-5, -13); ctx.lineTo(-9, -4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(13, -14); ctx.lineTo(7, -13); ctx.lineTo(11, -4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      rr(ctx, -14, 7, 8, 7, 1.5); ctx.fill(); ctx.stroke();
+      rr(ctx, 8, 7, 8, 7, 1.5); ctx.fill(); ctx.stroke();
+      // Brass snap buttons
+      ctx.fillStyle = '#f6cf65';
+      [-2, 9, 20].forEach(by => {
+        ctx.beginPath(); ctx.arc(-6.5, by, 1.8, 0, Math.PI * 2); ctx.fill();
+      });
+    } else if (cfg.top === 'jacket_bomber') {
+      // Level 3 Boy Reward: Pastel Sage & Cream Varsity Bomber Jacket!
+      drawBaseBody('#8ec9ad', '#3e6e58', 27);
+      // Striped ribbed collar & waist hem
+      ctx.fillStyle = '#fff5e6';
+      ctx.strokeStyle = '#3e6e58';
+      ctx.lineWidth = 1.7;
+      rr(ctx, -(wW + 2), 22, (wW + 2) * 2, 6, 3); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#63a386';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(-wW, 25); ctx.lineTo(wW, 25); ctx.stroke();
+      // Center snap placket
+      ctx.strokeStyle = '#3e6e58';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(1, -13); ctx.lineTo(1, 22); ctx.stroke();
+      ctx.fillStyle = '#fff5e6';
+      [-5, 4, 13].forEach(by => {
+        ctx.beginPath(); ctx.arc(1, by, 1.8, 0, Math.PI * 2); ctx.fill();
+      });
+      // Golden varsity star emblem on chest!
+      ctx.fillStyle = '#fde047';
+      ctx.strokeStyle = '#9c731c';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const rad = i % 2 === 0 ? 5.2 : 2.3;
+        const a = (i * Math.PI) / 5 - Math.PI / 2;
+        if (i === 0) ctx.moveTo(9 + Math.cos(a) * rad, 3 + Math.sin(a) * rad);
+        else ctx.lineTo(9 + Math.cos(a) * rad, 3 + Math.sin(a) * rad);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
     } else if (cfg.top === 'blouse_blossom') {
       drawBaseBody('#fbd1df', '#99546c', 26);
       // Delicate white scalloped Peter Pan collar
@@ -1645,9 +1913,9 @@
       ctx.beginPath();
       ctx.moveTo(-13, -1); ctx.lineTo(1, 4); ctx.lineTo(13, -1);
       ctx.stroke();
-      // Rose silk tie bow
-      ctx.fillStyle = '#f2799b';
-      ctx.strokeStyle = '#8f324d';
+      // Silk tie (soft navy for boy, rose for girl!)
+      ctx.fillStyle = isGirl ? '#f2799b' : '#4a75a8';
+      ctx.strokeStyle = isGirl ? '#8f324d' : '#264369';
       ctx.lineWidth = 1.6;
       ctx.beginPath();
       ctx.moveTo(1, 5); ctx.lineTo(-7, 17); ctx.lineTo(-1, 14);
@@ -2479,22 +2747,28 @@
         ctx.stroke();
       });
     } else if (style === 'long_boy') {
-      // Parted curtain bangs + layered adventure-boy locks!
+      // Layered skater/adventure-boy medium-long cut with shaggy bangs & ear-framing wisps!
       ctx.fillStyle = crownGrad;
       ctx.beginPath();
-      ctx.moveTo(0, -104);
-      ctx.bezierCurveTo(22, -104, 32, -86, 30, -60);
-      ctx.bezierCurveTo(29, -46, 26, -34, 21, -28);
-      ctx.bezierCurveTo(23, -44, 22, -64, 16, -72);
-      ctx.quadraticCurveTo(8, -62, 4, -80);
-      ctx.quadraticCurveTo(-4, -62, -16, -66);
-      ctx.bezierCurveTo(-20, -52, -20, -34, -26 - sway * 0.25, -18);
-      ctx.bezierCurveTo(-34, -36, -33, -64, -31, -76);
-      ctx.bezierCurveTo(-29, -92, -18, -104, 0, -104);
+      ctx.moveTo(-2, -104);
+      ctx.bezierCurveTo(18, -105, 31, -90, 30, -68);
+      ctx.lineTo(27, -46);
+      ctx.lineTo(21, -56);
+      ctx.lineTo(18, -68);
+      // Shaggy dynamic forehead locks
+      ctx.lineTo(12, -58);
+      ctx.lineTo(5, -70);
+      ctx.lineTo(-3, -57);
+      ctx.lineTo(-11, -68);
+      ctx.lineTo(-18, -58);
+      // Layered side lock sweeping neatly past ear to jaw
+      ctx.bezierCurveTo(-21, -46, -24, -36, -30 - sway * 0.2, -26);
+      ctx.bezierCurveTo(-36, -42, -34, -66, -31, -78);
+      ctx.bezierCurveTo(-28, -94, -18, -104, -2, -104);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
-      drawGlossHalo(0, -87, 21, 11);
+      drawGlossHalo(0, -87, 20, 10);
     }
 
     ctx.restore();
@@ -2548,6 +2822,45 @@
       ctx.moveTo(1.5, -60); ctx.lineTo(4, -60);
       ctx.moveTo(-19.5, -62); ctx.lineTo(-26, -61);
       ctx.stroke();
+    } else if (glassesId === 'sport_shades') {
+      // Level 9 Boy Reward: Cool Pastel-Navy Rounded Sunglasses!
+      ctx.fillStyle = 'rgba(56, 132, 189, 0.72)';
+      ctx.strokeStyle = '#2c4a6b';
+      ctx.lineWidth = 2.5;
+      rr(ctx, -19, -64, 20, 12.5, 5); ctx.fill(); ctx.stroke();
+      rr(ctx, 4.5, -64, 18, 12.5, 5); ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(1, -60); ctx.lineTo(4.5, -60);
+      ctx.moveTo(-19, -61); ctx.lineTo(-26, -61);
+      ctx.stroke();
+      // Diagonal white gloss
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-14, -55); ctx.lineTo(-9, -62);
+      ctx.moveTo(9, -55); ctx.lineTo(14, -62);
+      ctx.stroke();
+    } else if (glassesId === 'goggles_pilot') {
+      // Level 15 Boy Reward: Storybook Brass Adventurer Pilot Goggles!
+      // Strap
+      ctx.strokeStyle = '#6e472b';
+      ctx.lineWidth = 4.2;
+      ctx.beginPath(); ctx.moveTo(-26, -60); ctx.lineTo(-18, -59); ctx.stroke();
+      // Brass rims + glowing sky glass
+      ctx.fillStyle = 'rgba(125, 211, 252, 0.58)';
+      ctx.strokeStyle = '#b8832c';
+      ctx.lineWidth = 3.2;
+      ctx.beginPath(); ctx.ellipse(-8.5, -58, 10.5, 9.5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(13.2, -58, 9.5, 9.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#6e472b';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath(); ctx.moveTo(1.8, -58); ctx.lineTo(4.2, -58); ctx.stroke();
+      // Bright lens shine
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.beginPath();
+      ctx.ellipse(-12, -62, 3, 1.5, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(10, -62, 2.8, 1.4, -0.4, 0, Math.PI * 2);
+      ctx.fill();
     } else if (glassesId === 'star_shades') {
       // Level 15: Playful Pink Star Fairy Shades!
       const drawStar = (cx, cy, rOuter, rInner) => {
@@ -2713,6 +3026,84 @@
       rr(ctx, -22, -4, 44, 6.5, 3);
       ctx.fill();
       ctx.stroke();
+    } else if (hatId === 'cap_baseball') {
+      // Boy Starter: Pastel Sky & Cream Baseball Cap with curved forward visor!
+      ctx.translate(0, -92);
+      ctx.rotate(-0.05);
+      // Curved visor pointing forward (+X)
+      ctx.fillStyle = '#6ca9d9';
+      ctx.strokeStyle = '#335d80';
+      ctx.lineWidth = 2.1;
+      ctx.beginPath();
+      ctx.moveTo(4, 2);
+      ctx.quadraticCurveTo(28, -2, 39, 6);
+      ctx.quadraticCurveTo(26, 12, 2, 7);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Cap dome
+      const cg = ctx.createLinearGradient(0, -18, 0, 6);
+      cg.addColorStop(0, '#a3d2f5');
+      cg.addColorStop(1, '#79b5e3');
+      ctx.fillStyle = cg;
+      ctx.beginPath();
+      ctx.arc(-2, 4, 25, Math.PI, 0);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Cream front panel & top button
+      ctx.fillStyle = '#fff9ee';
+      ctx.beginPath();
+      ctx.arc(8, 3, 12, Math.PI * 1.15, Math.PI * 1.92);
+      ctx.lineTo(8, 3); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#f6cf65';
+      ctx.beginPath(); ctx.arc(-2, -21, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    } else if (hatId === 'beanie_cozy') {
+      // Boy Starter: Cozy Pastel Teal Ribbed Knit Beanie with Pom-Pom!
+      ctx.translate(-1, -93);
+      ctx.rotate(-0.08);
+      // Pom-pom on top
+      ctx.fillStyle = '#fff5e6';
+      ctx.strokeStyle = '#43736b';
+      ctx.lineWidth = 1.9;
+      ctx.beginPath(); ctx.arc(-2, -24, 7.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      // Knit dome
+      ctx.fillStyle = '#7bb8b0';
+      ctx.strokeStyle = '#3a6660';
+      ctx.lineWidth = 2.1;
+      ctx.beginPath();
+      ctx.arc(0, 4, 26, Math.PI * 0.98, Math.PI * 2.02);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Ribbed fold cuff
+      ctx.fillStyle = '#99cfc8';
+      rr(ctx, -27, -2, 54, 10, 5);
+      ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#4e857d';
+      ctx.lineWidth = 1.4;
+      [-18, -9, 0, 9, 18].forEach(rx => {
+        ctx.beginPath(); ctx.moveTo(rx, -1); ctx.lineTo(rx, 7); ctx.stroke();
+      });
+    } else if (hatId === 'cap_explorer') {
+      // Level 12 Boy Reward: Biscuit-Brown Storybook Newsboy / Explorer Flat Cap!
+      ctx.translate(0, -93);
+      ctx.rotate(-0.04);
+      // Visor
+      ctx.fillStyle = '#8f633e';
+      ctx.strokeStyle = '#4f331c';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(6, 3);
+      ctx.quadraticCurveTo(26, 0, 35, 7);
+      ctx.quadraticCurveTo(22, 11, 4, 7);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Rounded flat cap crown
+      ctx.fillStyle = '#c79b6d';
+      ctx.beginPath();
+      ctx.ellipse(-2, -3, 28, 12.5, -0.06, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      // Brass top button
+      ctx.fillStyle = '#f6cf65';
+      ctx.beginPath(); ctx.arc(-2, -15, 2.8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     } else if (hatId === 'cat_ears') {
       // Level 6 Easter Egg: Headband with ONE Müezza grey ear + ONE Boncuk cream/mocha ear!
       ctx.strokeStyle = '#f472b6';
@@ -2745,6 +3136,47 @@
       ctx.beginPath();
       ctx.moveTo(12, -99); ctx.lineTo(22, -108); ctx.lineTo(20, -95);
       ctx.closePath(); ctx.fill();
+    } else if (hatId === 'cap_cat_beanie') {
+      // Level 6 Boy Reward: Cozy Pastel Slate Knit Beanie with Müezza & Boncuk Cat Ears!
+      ctx.translate(-1, -93);
+      ctx.rotate(-0.05);
+      // Left cat ear (Müezza grey)
+      ctx.fillStyle = '#7c8594';
+      ctx.strokeStyle = '#3f4654';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-22, -10); ctx.lineTo(-27, -30); ctx.lineTo(-8, -19);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#d6dde8';
+      ctx.beginPath();
+      ctx.moveTo(-20, -13); ctx.lineTo(-23, -24); ctx.lineTo(-12, -18);
+      ctx.closePath(); ctx.fill();
+      // Right cat ear (Boncuk warm mocha)
+      ctx.fillStyle = '#825d42';
+      ctx.strokeStyle = '#4a311f';
+      ctx.beginPath();
+      ctx.moveTo(8, -19); ctx.lineTo(26, -30); ctx.lineTo(22, -10);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f5e1cc';
+      ctx.beginPath();
+      ctx.moveTo(12, -18); ctx.lineTo(22, -24); ctx.lineTo(20, -13);
+      ctx.closePath(); ctx.fill();
+      // Cozy knit beanie dome
+      ctx.fillStyle = '#6f87ad';
+      ctx.strokeStyle = '#364866';
+      ctx.lineWidth = 2.1;
+      ctx.beginPath();
+      ctx.arc(0, 4, 26, Math.PI * 0.98, Math.PI * 2.02);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Cream ribbed fold cuff with paw patch
+      ctx.fillStyle = '#f5ebd8';
+      rr(ctx, -27, -2, 54, 10, 5);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#6f87ad';
+      ctx.beginPath(); ctx.arc(0, 3, 2.6, 0, Math.PI * 2); ctx.fill();
     } else if (hatId === 'flower_crown') {
       // Level 12: Enchanted Meadow Flower Crown
       ctx.strokeStyle = '#5da373';
@@ -2803,6 +3235,94 @@
       ctx.beginPath();
       ctx.arc(-24, -42, 3.5, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawNeckAccessory(ctx, neckAccId, pose) {
+    if (!neckAccId || neckAccId === 'none') return;
+    const sway = (pose.hairSway || 0) * 14;
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    if (neckAccId === 'scarf_knit') {
+      // Cozy pastel coral & cream striped knitted scarf!
+      // Fluttering scarf tail
+      ctx.fillStyle = '#f28c8c';
+      ctx.strokeStyle = '#993d45';
+      ctx.lineWidth = 1.9;
+      ctx.beginPath();
+      ctx.moveTo(4, -10);
+      ctx.quadraticCurveTo(12 - sway * 0.4, 2, 8 - sway * 0.6, 16);
+      ctx.lineTo(-1 - sway * 0.5, 14);
+      ctx.quadraticCurveTo(1, 0, -2, -10);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Cream stripe on tail
+      ctx.fillStyle = '#fff5e6';
+      ctx.fillRect(1 - sway * 0.3, 4, 8, 3.5);
+
+      // Soft wrap around lower neck
+      ctx.fillStyle = '#f7a1a1';
+      rr(ctx, -12, -19, 24, 10, 5);
+      ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#fff5e6';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-6, -18); ctx.lineTo(-6, -10);
+      ctx.moveTo(5, -18); ctx.lineTo(5, -10);
+      ctx.stroke();
+    } else if (neckAccId === 'bandana_star') {
+      // Boy Starter: Pastel Sky Adventure Neckerchief Bandana with Star!
+      ctx.fillStyle = '#73b3e3';
+      ctx.strokeStyle = '#335d80';
+      ctx.lineWidth = 1.9;
+      ctx.beginPath();
+      ctx.moveTo(-13, -17);
+      ctx.quadraticCurveTo(0, -12, 13, -17);
+      ctx.lineTo(2, 3);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Tiny golden star emblem
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath(); ctx.arc(1.5, -7, 2.5, 0, Math.PI * 2); ctx.fill();
+    } else if (neckAccId === 'bowtie_cute') {
+      // Level 3 Boy Reward: Smart Pastel Navy & Gold Bow Tie!
+      ctx.fillStyle = '#4e74a6';
+      ctx.strokeStyle = '#253c5e';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(1, -13); ctx.lineTo(-9, -18); ctx.lineTo(-9, -8); ctx.closePath();
+      ctx.moveTo(1, -13); ctx.lineTo(11, -18); ctx.lineTo(11, -8); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f6cf65';
+      ctx.beginPath(); ctx.arc(1, -13, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    } else if (neckAccId === 'medal_hero') {
+      // Level 9 Boy Reward: Golden Paw-Hero Medallion on Sky Ribbon!
+      ctx.strokeStyle = '#60a5fa';
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(-9, -16); ctx.lineTo(1, -2); ctx.lineTo(10, -16);
+      ctx.stroke();
+      ctx.fillStyle = '#f6cf65';
+      ctx.strokeStyle = '#9c731c';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.arc(1, 3, 6.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff9e6';
+      ctx.beginPath(); ctx.arc(1, 3, 2.4, 0, Math.PI * 2); ctx.fill();
+    } else if (neckAccId === 'badge_knight') {
+      // Level 21 Boy Reward: Golden Royal Cat-Shield Clasp Brooch!
+      ctx.fillStyle = '#f6cf65';
+      ctx.strokeStyle = '#9c731c';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-6, -15); ctx.lineTo(8, -15); ctx.lineTo(8, -7);
+      ctx.quadraticCurveTo(1, -1, -6, -7); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#60a5fa';
+      ctx.beginPath(); ctx.arc(1, -10, 2.6, 0, Math.PI * 2); ctx.fill();
     }
 
     ctx.restore();
@@ -2909,6 +3429,9 @@
 
     // 6c. Neck + Head + Face + Glasses + Front Hair + Accessories + Hat
     drawNeckAndHead(ctx, cfg, skin, hair, eye, pose);
+
+    // 6c2. Neck & Style Accessory (Scarf, Bandana, Bow Tie, Hero Medal!)
+    drawNeckAccessory(ctx, cfg.neckAcc, pose);
 
     // 6d. Near Arm (in front of torso!)
     drawArm(ctx, -15, -10, pose.frontShoulder, pose.frontElbow, cfg, skin, true);
