@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>save.meow — Play with Mel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="site-shell">
+    <!-- SİTE ÜST BÖLÜMÜ: HER EKRANDA SÜREKLİ GÖRÜNEN MARKA LOGOSU & SES KONTROLLERİ -->
+    <header id="site-brand-header" class="site-brand-header">
+      <button id="site-brand-logo" class="site-brand-logo" type="button" title="Açılış ekranına dön — save.meow">
+        <span class="header-logo-emblem" aria-hidden="true">
+          <svg class="brand-emblem-svg" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="hdr-bg" x1="12" y1="14" x2="76" y2="78" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#fffdf9"/>
+                <stop offset="52%" stop-color="#fce4ee"/>
+                <stop offset="100%" stop-color="#e5dcfb"/>
+              </linearGradient>
+              <linearGradient id="hdr-ring" x1="10" y1="12" x2="78" y2="78" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#f7a8c4"/>
+                <stop offset="50%" stop-color="#c9b6f7"/>
+                <stop offset="100%" stop-color="#9ad0f5"/>
+              </linearGradient>
+              <linearGradient id="hdr-paw" x1="30" y1="36" x2="58" y2="68" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#f693b6"/>
+                <stop offset="100%" stop-color="#e26e9b"/>
+              </linearGradient>
+            </defs>
+            <!-- Sol Kedi Kulağı (Müezza - Duman Grisi) -->
+            <path d="M18 39 L13 12 C12.6 9.6 15.2 8.2 17.2 9.6 L37 23 Z" fill="#778496" stroke="#4f5b6b" stroke-width="2.4" stroke-linejoin="round"/>
+            <path d="M21 33 L18 17 L31 25 Z" fill="#fbc6d4"/>
+            <!-- Sağ Kedi Kulağı (Boncuk - Krem & Moka Uçlu) -->
+            <path d="M70 39 L75 12 C75.4 9.6 72.8 8.2 70.8 9.6 L51 23 Z" fill="#f5e2cb" stroke="#855c42" stroke-width="2.4" stroke-linejoin="round"/>
+            <path d="M74.4 13.5 L72.6 22.5 L64.5 16.5 L70.8 9.8 C72.6 8.6 74.7 10.6 74.4 13.5 Z" fill="#9a7055"/>
+            <path d="M67 33 L70 17 L57 25 Z" fill="#fbc6d4"/>
+            <!-- Ana Pastel Madalyon -->
+            <circle cx="44" cy="49" r="31" fill="url(#hdr-bg)" stroke="url(#hdr-ring)" stroke-width="3.2"/>
+            <!-- İnce Kedi Bıyıkları -->
+            <path d="M10 49 L21 51 M11 56 L21 55" stroke="#b998b0" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M78 49 L67 51 M77 56 L67 55" stroke="#b998b0" stroke-width="1.8" stroke-linecap="round"/>
+            <!-- Sevimli Pastel Pati & Kalp Yastıkçığı -->
+            <ellipse cx="32" cy="41" rx="4.2" ry="5.2" transform="rotate(-18 32 41)" fill="#f7a8c4"/>
+            <ellipse cx="40.5" cy="36.5" rx="4.1" ry="5.2" transform="rotate(-5 40.5 36.5)" fill="#c9b6f7"/>
+            <ellipse cx="48.5" cy="36.5" rx="4.1" ry="5.2" transform="rotate(6 48.5 36.5)" fill="#9ad0f5"/>
+            <ellipse cx="56.5" cy="41.5" rx="4.2" ry="5.2" transform="rotate(18 56.5 41.5)" fill="#fbd0a8"/>
+            <path d="M44 45.5 C36.5 45.5 31 51.5 32.5 58 C33.8 63 39.5 64.5 44 62.5 C48.5 64.5 54.2 63 55.5 58 C57 51.5 51.5 45.5 44 45.5 Z" fill="url(#hdr-paw)"/>
+            <ellipse cx="40.5" cy="51.5" rx="3.4" ry="1.8" transform="rotate(-22 40.5 51.5)" fill="#ffffff" opacity="0.65"/>
+            <!-- Müezza Kehribar & Boncuk Gök Mavisi Parıltıları -->
+            <path d="M23 27 L24.4 23.8 L25.8 27 L29 28.4 L25.8 29.8 L24.4 33 L23 29.8 L19.8 28.4 Z" fill="#f5b041"/>
+            <path d="M64 27 L65.4 23.8 L66.8 27 L70 28.4 L66.8 29.8 L65.4 33 L64 29.8 L60.8 28.4 Z" fill="#6cb9f0"/>
+          </svg>
+        </span>
+        <span class="header-brand-text">
+          <span class="header-brand-name">save<span class="brand-dot">.</span>meow</span>
+          <span class="header-brand-slogan">Play with Mel</span>
+        </span>
+      </button>
+
+      <div class="site-header-right">
+        <div class="music-mood-pill" id="music-mood-pill" title="Aktif müzik atmosferi">
+          <span class="mood-dot" id="music-mood-dot"></span>
+          <span id="music-mood-label">🎵 Menü</span>
+        </div>
+        <div class="site-volume-control" title="Ses Seviyesi">
+          <button id="btn-header-sound" class="header-sound-btn" type="button" title="Sesi Aç/Kapat (M)">🔊</button>
+          <input id="site-volume-slider" class="site-volume-slider" type="range" min="0" max="100" value="80" aria-label="Ses Seviyesi">
+        </div>
+      </div>
+    </header>
+
+    <div id="game-container">
+    <!-- Oyun çizim alanı (Canvas) -->
+    <canvas id="gameCanvas" width="960" height="540"></canvas>
+
+    <!-- Üst Gösterge Paneli (HUD) -->
+    <div id="game-hud" class="hud-overlay hidden">
+      <div class="hud-left">
+        <div class="hearts-container" id="hearts-container" title="Kalan Canlar">
+          <span class="heart active" id="heart-1">❤️</span>
+          <span class="heart active" id="heart-2">❤️</span>
+          <span class="heart active" id="heart-3">❤️</span>
+        </div>
+        <div class="hud-stat score-box">
+          <span class="stat-icon">⭐</span>
+          <span class="stat-label">PUAN</span>
+          <span class="stat-value" id="hud-score">0</span>
+        </div>
+      </div>
+
+      <div class="hud-center">
+        <div class="level-badge" id="hud-level-badge">
+          <span id="hud-level-num">Bölüm 1</span>
+          <span id="hud-level-name" class="level-subtitle">Sıcak Oturma Odası</span>
+        </div>
+        <div class="partner-tracker" id="partner-tracker" title="En iyi arkadaşının yönü">
+          <span class="tracker-icon">🐾</span>
+          <span id="tracker-text">Müezza'yı Bul!</span>
+          <span class="tracker-arrow" id="tracker-arrow">➔</span>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <div class="hud-stat treat-box" title="Toplanan Mamalar & Oyuncaklar">
+          <span class="stat-icon" id="hud-toy-icon">🐟</span>
+          <span class="stat-value" id="hud-treats">0 / 0</span>
+        </div>
+        <button id="btn-sound-toggle" class="hud-btn" title="Sesi Aç/Kapat (M)">🔊</button>
+        <button id="btn-pause" class="hud-btn" title="Oyunu Duraklat (Esc / P)">⏸️</button>
+      </div>
+    </div>
+
+    <!-- Mobil / Dokunmatik Ekran Kontrolleri -->
+    <div id="touch-controls" class="touch-controls hidden">
+      <div class="touch-dpad">
+        <button class="touch-btn" id="touch-left">◀</button>
+        <button class="touch-btn" id="touch-down">▼</button>
+        <button class="touch-btn" id="touch-right">▶</button>
+      </div>
+      <div class="touch-action">
+        <button class="touch-btn touch-btn-jump" id="touch-jump">ZIPLA 🐾</button>
+      </div>
+    </div>
+
+    <!-- 1. ÖZEL AÇILIŞ / INTRO EKRANI (INTRO & HOME SCREEN) -->
+    <div id="screen-start" class="screen-modal active intro-screen intro-animate">
+      <!-- Pastel Masalsı Hareketli Arka Plan (Patiler, Yıldızlar, Kalpler & Parıltılar) -->
+      <canvas id="intro-bg-canvas" width="960" height="540" aria-hidden="true"></canvas>
+
+      <div class="intro-stage">
+        <!-- Üst Kahraman Sahnesi: Sol Müezza | Orta save.meow Logosu | Sağ Boncuk -->
+        <div class="intro-showcase-row">
+          <!-- Sol: Müezza -->
+          <button type="button" class="intro-cat-medallion intro-cat-left" id="intro-cat-muezza" title="Müezza'ya tıkla!">
+            <span class="intro-cat-halo muezza-halo"></span>
+            <img src="assets/muezza.png" alt="Müezza" class="intro-cat-img" id="preview-muezza-img">
+            <span class="intro-cat-chip muezza-chip">Müezza</span>
+            <span class="intro-cat-sparkle sp-a">✨</span>
+          </button>
+
+          <!-- Orta: Özgün save.meow Marka Logosu + Play with Mel -->
+          <div class="intro-brand-center" id="intro-brand-center">
+            <div class="intro-logo-emblem-wrap">
+              <span class="logo-twinkle tw-1">✦</span>
+              <span class="logo-twinkle tw-2">✧</span>
+              <span class="logo-twinkle tw-3">🐾</span>
+              <svg class="intro-logo-svg" viewBox="0 0 120 112" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="save.meow logosu">
+                <defs>
+                  <radialGradient id="hero-medallion" cx="46%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="55%" stop-color="#fde8f2"/>
+                    <stop offset="100%" stop-color="#e5defc"/>
+                  </radialGradient>
+                  <linearGradient id="hero-ring" x1="16" y1="18" x2="104" y2="104" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#f79ec0"/>
+                    <stop offset="48%" stop-color="#c7b2f8"/>
+                    <stop offset="100%" stop-color="#8ecdf7"/>
+                  </linearGradient>
+                  <linearGradient id="hero-paw" x1="42" y1="50" x2="78" y2="88" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#f99ec0"/>
+                    <stop offset="100%" stop-color="#e36d9b"/>
+                  </linearGradient>
+                  <filter id="hero-glow" x="-15%" y="-15%" width="130%" height="130%">
+                    <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#d88db0" flood-opacity="0.28"/>
+                  </filter>
+                </defs>
+                <g filter="url(#hero-glow)">
+                  <!-- Müezza Kulağı (Sol - Duman Grisi & Kehribar Parıltı) -->
+                  <path d="M25 51 L17 15 C16.4 11.8 19.9 9.8 22.6 11.7 L50 30 Z" fill="#778496" stroke="#4f5b6b" stroke-width="2.8" stroke-linejoin="round"/>
+                  <path d="M29 44 L24 21 L42 32 Z" fill="#fbc6d6"/>
+                  <!-- Boncuk Kulağı (Sağ - İpeksi Krem, Moka Uç & Gök Mavisi Parıltı) -->
+                  <path d="M95 51 L103 15 C103.6 11.8 100.1 9.8 97.4 11.7 L70 30 Z" fill="#f7e4cd" stroke="#855c42" stroke-width="2.8" stroke-linejoin="round"/>
+                  <path d="M102.3 17 L99.7 28.8 L88.5 21 L97.4 11.9 C99.8 10.3 102.8 13.1 102.3 17 Z" fill="#9a6f54"/>
+                  <path d="M91 44 L96 21 L78 32 Z" fill="#fbc6d6"/>
+                  <!-- Pastel Madalyon Gövde -->
+                  <circle cx="60" cy="63" r="41" fill="url(#hero-medallion)" stroke="url(#hero-ring)" stroke-width="4"/>
+                  <circle cx="60" cy="63" r="35.5" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="5 5" opacity="0.85"/>
+                </g>
+                <!-- Zarif Kedi Bıyıkları -->
+                <path d="M12 62 L27 65 M14 71 L27 70" stroke="#b995b3" stroke-width="2.2" stroke-linecap="round"/>
+                <path d="M108 62 L93 65 M106 71 L93 70" stroke="#b995b3" stroke-width="2.2" stroke-linecap="round"/>
+                <!-- Pastel Pati Parmakları (Pembe, Lavanta, Açık Mavi, Krem Şeftali) -->
+                <ellipse cx="43.5" cy="53" rx="5.5" ry="6.8" transform="rotate(-20 43.5 53)" fill="#f7a8c4" stroke="#ffffff" stroke-width="1.5"/>
+                <ellipse cx="55" cy="46.8" rx="5.3" ry="6.8" transform="rotate(-6 55 46.8)" fill="#cab5f8" stroke="#ffffff" stroke-width="1.5"/>
+                <ellipse cx="66" cy="46.8" rx="5.3" ry="6.8" transform="rotate(6 66 46.8)" fill="#94cff7" stroke="#ffffff" stroke-width="1.5"/>
+                <ellipse cx="77" cy="53.5" rx="5.5" ry="6.8" transform="rotate(20 77 53.5)" fill="#fbd0a8" stroke="#ffffff" stroke-width="1.5"/>
+                <!-- Kalp Şeklinde Ana Pati Yastığı -->
+                <path d="M60 58.5 C49.5 58.5 42.5 66.5 44.5 75 C46.2 81.8 54 83.8 60 81 C66 83.8 73.8 81.8 75.5 75 C77.5 66.5 70.5 58.5 60 58.5 Z" fill="url(#hero-paw)" stroke="#ffffff" stroke-width="1.8"/>
+                <ellipse cx="55.2" cy="66.5" rx="4.6" ry="2.4" transform="rotate(-22 55.2 66.5)" fill="#ffffff" opacity="0.65"/>
+                <!-- Müezza Kehribar & Boncuk Mavi Yıldızları -->
+                <path d="M31 35 L33 30.5 L35 35 L39.5 37 L35 39 L33 43.5 L31 39 L26.5 37 Z" fill="#f5b041"/>
+                <path d="M87 35 L89 30.5 L91 35 L95.5 37 L91 39 L89 43.5 L87 39 L82.5 37 Z" fill="#6cb9f0"/>
+              </svg>
+            </div>
+
+            <h1 class="intro-brand-title">
+              <span class="intro-brand-wordmark">save<span class="intro-brand-dot">.</span>meow</span>
+            </h1>
+            <div class="intro-brand-slogan-wrap">
+              <span class="slogan-sparkle">✦</span>
+              <span class="intro-brand-slogan">Play with Mel</span>
+              <span class="slogan-sparkle">✦</span>
+            </div>
+            <div class="intro-story-badge">Boncuk &amp; Müezza'nın Büyülü Macerası 💖</div>
+          </div>
+
+          <!-- Sağ: Boncuk -->
+          <button type="button" class="intro-cat-medallion intro-cat-right" id="intro-cat-boncuk" title="Boncuk'a tıkla!">
+            <span class="intro-cat-halo boncuk-halo"></span>
+            <img src="assets/boncuk.png" alt="Boncuk" class="intro-cat-img" id="preview-boncuk-img">
+            <span class="intro-cat-chip boncuk-chip">Boncuk</span>
+            <span class="intro-cat-sparkle sp-b">⭐</span>
+          </button>
+        </div>
+
+        <!-- Ortada Büyük ve Dikkat Çekici "Oyuna Başla" Aksiyonu -->
+        <div class="intro-cta-area">
+          <button id="btn-go-character-select" class="glow-button intro-play-btn" type="button">
+            <span class="btn-icon">🐾</span> Oyuna Başla <span class="btn-sparkle">✨</span>
+          </button>
+          <button id="btn-how-to-play" class="glow-button btn-secondary intro-howto-btn" type="button">
+            <span class="btn-icon">📖</span> Nasıl Oynanır?
+          </button>
+        </div>
+
+        <div class="intro-controls-pill">
+          <span><kbd>A</kbd><kbd>D</kbd> / <kbd>←</kbd><kbd>→</kbd> Koş &nbsp;•&nbsp; <kbd>Boşluk</kbd> / <kbd>W</kbd> Zıpla &nbsp;•&nbsp; <kbd>M</kbd> Ses</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. KARAKTER SEÇİM EKRANI (CHARACTER SELECTION) -->
+    <div id="screen-character" class="screen-modal hidden">
+      <div class="glass-panel select-card">
+        <h2 class="section-title">Kedini Seç!</h2>
+        <p class="section-intro">
+          Hangi kediyi kontrol etmek istiyorsun? Seçmediğin dostun her labirentin sonunda seni sabırsızlıkla bekleyecek!
+        </p>
+
+        <div class="character-cards-grid">
+          <!-- Sol Kart: Müezza -->
+          <div class="char-card selected" id="card-muezza" data-cat="muezza" onclick="if(window.game) window.game.selectCat('muezza');">
+            <div class="card-ribbon">Seçilen Kedi</div>
+            <div class="char-canvas-box">
+              <canvas id="card-canvas-muezza" class="char-live-canvas" width="280" height="248"></canvas>
+            </div>
+            <h3 class="char-name muezza-text">Müezza</h3>
+            <div class="char-breed">Scottish & British Longhair Melezi</div>
+            <ul class="char-traits">
+              <li>✨ <strong>Kürk:</strong> İhtişamlı pofuduk duman grisi aslan yelesi</li>
+              <li>🌟 <strong>Gözler:</strong> Büyüleyici, sıcacık kehribar-bal sarısı</li>
+              <li>🧸 <strong>Karakter:</strong> Tontiş yanaklı, cesur, tatlı ve sevecen</li>
+              <li>🧦 <strong>En Sevdiği Şey:</strong> Çizgili Sıcak Çoraplar</li>
+            </ul>
+            <div class="partner-notice">
+              👉 Müezza'yı seçersen: <strong>Boncuk</strong> labirentin sonunda bekler!
+            </div>
+          </div>
+
+          <!-- Sağ Kart: Boncuk -->
+          <div class="char-card" id="card-boncuk" data-cat="boncuk" onclick="if(window.game) window.game.selectCat('boncuk');">
+            <div class="card-ribbon">Seçilen Kedi</div>
+            <div class="char-canvas-box">
+              <canvas id="card-canvas-boncuk" class="char-live-canvas" width="280" height="248"></canvas>
+            </div>
+            <h3 class="char-name boncuk-text">Boncuk</h3>
+            <div class="char-breed">Siyam & British Shorthair Melezi</div>
+            <ul class="char-traits">
+              <li>✨ <strong>Kürk:</strong> İpeksi krem gövde, moka yüz maskesi, beyaz patiler</li>
+              <li>💎 <strong>Gözler:</strong> Pırıl pırıl parıldayan saf gök mavisi</li>
+              <li>⚡ <strong>Karakter:</strong> Çevik, asil, narin ve çok meraklı</li>
+              <li>🧻 <strong>En Sevdiği Şey:</strong> Tuvalet Kağıdı Ruloları</li>
+            </ul>
+            <div class="partner-notice">
+              👉 Boncuk'u seçersen: <strong>Müezza</strong> labirentin sonunda bekler!
+            </div>
+          </div>
+
+          <!-- Üçüncü Kart: Sen Kurtar! (İnsan Karakteri) -->
+          <div class="char-card" id="card-human" data-cat="human" onclick="if(window.game) window.game.selectCat('human');">
+            <div class="card-ribbon">Seçilen Kahraman</div>
+            <div class="char-canvas-box">
+              <canvas id="card-canvas-human" width="140" height="124" style="border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></canvas>
+            </div>
+            <h3 class="char-name human-text">Sen Kurtar! ✨</h3>
+            <div class="char-breed">Özel Kahraman & Kıyafet Dolabı</div>
+            <ul class="char-traits">
+              <li>💇 <strong>Saç & Yüz:</strong> 17 saç modeli, 11 renk, 6 göz rengi</li>
+              <li>👗 <strong>Dolap:</strong> Kıyafet, ayakkabı, şapka & gözlük</li>
+              <li>🎁 <strong>Ödüller:</strong> Bölüm geçtikçe açılan özel kostümler</li>
+              <li>💖 <strong>Görev:</strong> Hem Boncuk hem Müezza'yı kurtar!</li>
+            </ul>
+            <div class="partner-notice" style="background:#fdf2f8;border-color:#fbcfe8;color:#be185d;">
+              👉 Sen Kurtar'ı seçersen: <strong>Hem Boncuk hem Müezza</strong> birlikte kurtarılır!
+            </div>
+          </div>
+        </div>
+
+        <div class="select-actions">
+          <button id="btn-back-to-start" class="glow-button btn-secondary" type="button">
+            ⬅ Geri
+          </button>
+          <button id="btn-open-cat-studio" class="glow-button btn-cat-wardrobe" type="button">
+            🎀 Kedi Dolabı &amp; Kostümler
+          </button>
+          <button id="btn-start-game" class="glow-button btn-primary btn-large" type="button">
+            <span id="selected-cat-name">Müezza</span> ile Maceraya Atıl! 🚀
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2b. GELİŞMİŞ İNSAN KARAKTERİ OLUŞTURMA & KIYAFET DOLABI -->
+    <div id="screen-custom-hero" class="screen-modal hidden">
+      <div class="glass-panel custom-studio-card">
+        <!-- Üst Başlık ve Kız/Erkek Seçimi -->
+        <div class="studio-header">
+          <div class="studio-title-group">
+            <h2 class="studio-title">✨ Kahramanını Tasarla</h2>
+            <span class="studio-reward-pill" id="studio-progress-pill">🎁 Ödüller: 0 / 16</span>
+          </div>
+          <div class="studio-gender-switch">
+            <button id="opt-hero-girl" class="gender-pill selected" type="button">👧 Kız</button>
+            <button id="opt-hero-boy" class="gender-pill" type="button">👦 Erkek</button>
+          </div>
+        </div>
+
+        <!-- 2 Sütunlu Ana Alan: Sol Büyük Canlı Önizleme | Sağ Özelleştirme & Dolap -->
+        <div class="studio-body">
+          <!-- SOL SÜTUN: Büyük Canlı Karakter Önizlemesi -->
+          <div class="studio-preview-col">
+            <div class="studio-canvas-frame">
+              <canvas id="hero-live-preview" width="460" height="520"></canvas>
+              <button id="btn-preview-flip" class="preview-mini-btn preview-flip-btn" type="button" title="Yön Çevir">⇄</button>
+              <button id="btn-hero-randomize" class="preview-mini-btn preview-rand-btn" type="button" title="Rastgele Kombin">🎲</button>
+            </div>
+
+            <!-- Animasyon Önizleme Barı -->
+            <div class="preview-pose-bar" id="preview-pose-bar">
+              <button class="pose-btn active" data-pose="idle" type="button">Dur</button>
+              <button class="pose-btn" data-pose="walk" type="button">Yürü</button>
+              <button class="pose-btn" data-pose="run" type="button">Koş</button>
+              <button class="pose-btn" data-pose="jump" type="button">Zıpla</button>
+              <button class="pose-btn" data-pose="celebrate" type="button">Sevin</button>
+              <button class="pose-btn" data-pose="hug" type="button">Sarıl</button>
+            </div>
+
+            <!-- İsim Giriş Kutusu -->
+            <div class="studio-name-box">
+              <span class="input-icon">✨</span>
+              <input type="text" id="input-hero-name" maxlength="16" placeholder="Karakterinin ismi..." value="Maya">
+            </div>
+          </div>
+
+          <!-- SAĞ SÜTUN: Sekmeli Gelişmiş Özelleştirme & Dolap -->
+          <div class="studio-controls-col">
+            <div class="studio-tabs" id="studio-tabs">
+              <button class="studio-tab active" data-tab="hair" type="button">💇 Saç</button>
+              <button class="studio-tab" data-tab="face" type="button">👀 Yüz</button>
+              <button class="studio-tab" data-tab="clothes" type="button">👗 Kıyafet</button>
+              <button class="studio-tab" data-tab="accessories" type="button">🎀 Aksesuar</button>
+              <button class="studio-tab" data-tab="wardrobe" type="button">👑 Dolap</button>
+            </div>
+
+            <div class="studio-tab-content" id="studio-tab-content"></div>
+            <div class="studio-toast hidden" id="studio-toast"></div>
+          </div>
+        </div>
+
+        <!-- Alt Aksiyon Çubuğu -->
+        <div class="studio-footer">
+          <button id="btn-back-to-char-select" class="glow-button btn-secondary" type="button">
+            ⬅ Geri
+          </button>
+          <div class="studio-next-reward-hint" id="studio-next-reward-hint">
+            🎁 Sonraki ödül: Bölüm 3
+          </div>
+          <button id="btn-start-hero-game" class="glow-button btn-primary btn-large" type="button">
+            Maceraya Başla! 🚀🐾
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2c. BONCUK & MÜEZZA KEDİ ÖZELLEŞTİRME, KOSTÜM VE ÖDÜL DOLABI -->
+    <div id="screen-cat-studio" class="screen-modal hidden">
+      <div class="glass-panel custom-studio-card cat-studio-card">
+        <div class="studio-header">
+          <div class="studio-title-group">
+            <h2 class="studio-title">🐱 Kedi Dolabı &amp; Kostümler</h2>
+            <span class="studio-reward-pill" id="cat-studio-progress-pill">🎁 Kedi Ödülleri: 0 / 50</span>
+          </div>
+          <div class="studio-gender-switch cat-studio-switcher">
+            <button id="opt-cat-muezza" class="gender-pill selected" type="button">🐱 Müezza</button>
+            <button id="opt-cat-boncuk" class="gender-pill" type="button">🐱 Boncuk</button>
+            <button id="opt-cat-duo" class="gender-pill" type="button">💕 İkili</button>
+          </div>
+        </div>
+
+        <div class="studio-body">
+          <!-- SOL SÜTUN: Canlı 2x HiDPI Kedi Önizleme & Etkileşimli Animasyon Barı -->
+          <div class="studio-preview-col">
+            <div class="studio-canvas-frame cat-canvas-frame">
+              <canvas id="cat-live-preview" width="460" height="440"></canvas>
+              <button id="btn-cat-preview-flip" class="preview-mini-btn preview-flip-btn" type="button" title="Yön Çevir">⇄</button>
+              <button id="btn-cat-reset" class="preview-mini-btn preview-reset-btn" type="button" title="Varsayılana Dön">♻️</button>
+              <button id="btn-cat-randomize" class="preview-mini-btn preview-rand-btn" type="button" title="Rastgele Kombin">🎲</button>
+            </div>
+
+            <div class="preview-pose-bar" id="cat-preview-pose-bar">
+              <button class="pose-btn active" data-pose="idle" type="button">Dur</button>
+              <button class="pose-btn" data-pose="walk" type="button">Yürü</button>
+              <button class="pose-btn" data-pose="run" type="button">Koş</button>
+              <button class="pose-btn" data-pose="jump" type="button">Zıpla</button>
+              <button class="pose-btn" data-pose="interact" type="button">Etkileşim</button>
+              <button class="pose-btn" data-pose="celebrate" type="button">Sevin</button>
+            </div>
+
+            <div class="cat-identity-note" id="cat-identity-note">
+              ✨ <strong>Müezza</strong> • Duman grisi kabarık tüyler &amp; kehribar gözler
+            </div>
+          </div>
+
+          <!-- SAĞ SÜTUN: Aksesuarlar, Parça Kostümler, Tam Setler, İkili Setler & Ödüller -->
+          <div class="studio-controls-col">
+            <div class="studio-tabs" id="cat-studio-tabs">
+              <button class="studio-tab active" data-tab="collar" type="button">📿 Tasma</button>
+              <button class="studio-tab" data-tab="neck" type="button">🧣 Fular</button>
+              <button class="studio-tab" data-tab="head" type="button">🎩 Başlık</button>
+              <button class="studio-tab" data-tab="costume" type="button">✨ Kostüm</button>
+              <button class="studio-tab" data-tab="duo" type="button">💕 İkili</button>
+              <button class="studio-tab" data-tab="rewards" type="button">🎁 Ödüller</button>
+            </div>
+
+            <div class="studio-tab-content" id="cat-studio-tab-content"></div>
+            <div class="studio-toast hidden" id="cat-studio-toast"></div>
+          </div>
+        </div>
+
+        <div class="studio-footer">
+          <button id="btn-cat-studio-back" class="glow-button btn-secondary" type="button">
+            ⬅ Geri
+          </button>
+          <div class="studio-next-reward-hint" id="cat-studio-next-reward-hint">
+            🎁 Sonraki ödül: Bölüm 2
+          </div>
+          <button id="btn-cat-studio-play" class="glow-button btn-primary btn-large" type="button">
+            Maceraya Başla! 🚀🐾
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. NASIL OYNANIR EKRANI (HOW TO PLAY) -->
+    <div id="screen-howto" class="screen-modal hidden">
+      <div class="glass-panel howto-card">
+        <h2 class="section-title">Nasıl Oynanır?</h2>
+        
+        <div class="howto-grid">
+          <div class="howto-item">
+            <div class="howto-icon">⌨️</div>
+            <h4>Hareket ve Zıplama</h4>
+            <p><strong>Ok Tuşları</strong> veya <strong>A / D</strong> ile koş. <strong>Boşluk (Space)</strong> veya <strong>W</strong> ile zıpla. Zıplama tuşuna uzun bastıkça daha yükseğe sıçrarsın!</p>
+          </div>
+
+          <div class="howto-item">
+            <div class="howto-icon">🧻 🧦</div>
+            <h4>Özel Oyuncaklar & Mamalar</h4>
+            <p>Boncuk <strong>Tuvalet Kağıdı</strong> rulolarına bayılır! Müezza ise <strong>Çorap</strong> toplamayı sever. Balık konserveleri ve mamaları toplayarak yüksek puan kazan!</p>
+          </div>
+
+          <div class="howto-item">
+            <div class="howto-icon">⚠️</div>
+            <h4>Tuzaklara Dikkat Et</h4>
+            <p>Sivri dikenlere, yuvarlanan oyuncaklara, sallanan sarkaçlara, sihirli lazerlere, alevlere ve derin su göletlerine dikkat et! Toplam 3 canın var.</p>
+          </div>
+
+          <div class="howto-item">
+            <div class="howto-icon">💤 🐾</div>
+            <h4>Uyuyan Kediler & Karanlık</h4>
+            <p>Koridorlarda mışıl mışıl uyuyan dev kedileri uyandırmadan üstlerinden zıpla. Karanlık bölümlerde kedinin yaydığı ışığı ve parlayan pati izlerini takip et!</p>
+          </div>
+        </div>
+
+        <div class="select-actions">
+          <button id="btn-close-howto" class="glow-button btn-primary">
+            Anladım, Haydi Oynayalım! 🐾
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. OYUNU DURAKLATMA EKRANI (PAUSE) -->
+    <div id="screen-pause" class="screen-modal hidden">
+      <div class="glass-panel pause-card">
+        <h2 class="section-title">Oyun Duraklatıldı ⏸️</h2>
+        <p class="pause-quote">Biraz soluklan, patilerini dinlendir!</p>
+        
+        <div class="pause-button-group">
+          <button id="btn-resume" class="glow-button btn-primary">
+            ▶ Maceraya Devam Et
+          </button>
+          <button id="btn-pause-wardrobe" class="glow-button btn-secondary hidden">
+            👗 Kıyafet Dolabı
+          </button>
+          <button id="btn-restart-level" class="glow-button btn-secondary">
+            🔄 Bu Bölümü Yeniden Başlat
+          </button>
+          <button id="btn-quit-to-menu" class="glow-button btn-danger">
+            🏠 Ana Menüye Dön
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. BÖLÜM ZAFERİ / KAVUŞMA EKRANI (VICTORY / REUNION) -->
+    <div id="screen-victory" class="screen-modal hidden">
+      <div class="glass-panel victory-card">
+        <div class="reunion-burst">💖 ✨ 🐾 ✨ 💖</div>
+        <h2 class="victory-title">Kavuştular! En İyi Dostlar Bir Arada!</h2>
+        <p class="victory-sub" id="victory-message">Boncuk ve Müezza burun buruna değdi ve sıcacık kucaklaştı!</p>
+
+        <div class="reunion-animation-box">
+          <canvas id="victory-canvas" width="320" height="145"></canvas>
+        </div>
+
+        <!-- Yeni Kıyafet / Aksesuar Ödülü Tebrik Kutusu -->
+        <div id="victory-reward-banner" class="victory-reward-banner hidden">
+          <div class="reward-banner-title">🎁 ✨ Tebrikler! Yeni Kıyafet Ödülü Açıldı! ✨ 🎁</div>
+          <div class="reward-items-list" id="victory-reward-items"></div>
+        </div>
+
+        <div class="stats-summary-box">
+          <div class="stat-pill">
+            <span class="stat-label">Tamamlanan Bölüm</span>
+            <span class="stat-number" id="vic-level-num">Bölüm 1</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">Mamalar & Oyuncak</span>
+            <span class="stat-number" id="vic-treats">0 / 0</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">Toplam Puan</span>
+            <span class="stat-number" id="vic-score">0</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">Başarı Derecesi</span>
+            <span class="stat-number" id="vic-stars">⭐⭐⭐</span>
+          </div>
+        </div>
+
+        <div class="victory-actions">
+          <button id="btn-victory-wardrobe" class="glow-button btn-secondary hidden">
+            👗 Dolapta Dene
+          </button>
+          <button id="btn-next-level" class="glow-button btn-primary btn-large">
+            Sonraki Büyülü Bölüm ➔ 🐾
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6b. DÜŞME EKRANI (FELL / RESPAWN) -->
+    <div id="screen-fell" class="screen-modal hidden">
+      <div class="glass-panel pause-card">
+        <div style="font-size:52px;margin-bottom:8px">😿</div>
+        <h2 class="section-title" id="fell-message">Hay aksi! Düştü!</h2>
+        <p style="color:#7c5339;margin:8px 0 20px;font-size:0.98rem">Endişelenme! Her kedi dört ayak üstüne düşer... tekrar dene!</p>
+        <div class="hearts-container" id="fell-hearts-display" style="justify-content:center;margin-bottom:16px">
+          <span class="heart active" id="fell-heart-1">❤️</span>
+          <span class="heart active" id="fell-heart-2">❤️</span>
+          <span class="heart active" id="fell-heart-3">❤️</span>
+        </div>
+        <div class="pause-button-group">
+          <button id="btn-try-again" class="glow-button btn-primary btn-large">
+            🔄 Tekrar Dene
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. CANLAR TÜKENDİ / YENİDEN DENE (GAME OVER) -->
+    <div id="screen-gameover" class="screen-modal hidden">
+      <div class="glass-panel gameover-card">
+        <div class="gameover-cat-icon">😿</div>
+        <h2 class="gameover-title">Canlar Tükendi!</h2>
+        <p class="gameover-msg">
+          Üzülme! Kediler her zaman dört ayak üstüne düşer. En iyi dostun labirentin sonunda seni bekliyor!
+        </p>
+
+        <div class="stats-summary-box">
+          <div class="stat-pill">
+            <span class="stat-label">Ulaşılan Bölüm</span>
+            <span class="stat-number" id="go-level">Bölüm 1</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">Kazanılan Puan</span>
+            <span class="stat-number" id="go-score">0</span>
+          </div>
+        </div>
+
+        <div class="gameover-actions">
+          <button id="btn-retry-level" class="glow-button btn-primary btn-large">
+            🔄 Bölümü Tekrar Dene
+          </button>
+          <button id="btn-gameover-home" class="glow-button btn-secondary">
+            🏠 Ana Menü
+          </button>
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div><!-- /.site-shell -->
+
+  <!-- JavaScript Modülleri -->
+  <script src="js/audio.js"></script>
+  <script src="js/wardrobe.js"></script>
+  <script src="js/cat-wardrobe.js"></script>
+  <script src="js/human-renderer.js"></script>
+  <script src="js/cat-renderer.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/physics.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/level-generator.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

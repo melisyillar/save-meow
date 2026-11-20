@@ -18,6 +18,7 @@ class Game {
     this.screenGameover = document.getElementById('screen-gameover');
     this.screenFell = document.getElementById('screen-fell');
     this.screenCustomHero = document.getElementById('screen-custom-hero');
+    this.screenCatStudio = document.getElementById('screen-cat-studio');
     this.hud = document.getElementById('game-hud');
 
     // HUD Elements
@@ -53,6 +54,10 @@ class Game {
     this.heroGender = this.heroConfig.gender || 'girl';
     this.heroName = this.heroConfig.name || 'Maya';
 
+    // Persistent Cat Wardrobe & Rewards Progression
+    this.catProgress = window.CatWardrobeSystem ? window.CatWardrobeSystem.loadProgress() : { highestLevelCompleted: 0, unlockedIds: [] };
+    this.catConfigs = window.CatWardrobeSystem ? window.CatWardrobeSystem.loadAllConfigs() : { boncuk: {}, muezza: {} };
+
     // Studio UI State
     this.studioTab = 'hair';
     this.previewPose = 'idle';
@@ -60,6 +65,14 @@ class Game {
     this.studioReturnScreen = 'select';
     this.studioToastTimer = null;
     this.victoryElapsed = 0;
+
+    // Cat Studio UI State
+    this.catStudioTarget = 'muezza'; // 'muezza' | 'boncuk' | 'duo'
+    this.catStudioTab = 'collar';
+    this.catPreviewPose = 'idle';
+    this.catPreviewFacingRight = true;
+    this.catStudioReturnScreen = 'select';
+    this.catStudioToastTimer = null;
 
     this.currentLevelNum = 1;
     this.score = 0;
@@ -96,6 +109,14 @@ class Game {
     this.victoryCanvas = document.getElementById('victory-canvas');
     this.heroLivePreviewCanvas = document.getElementById('hero-live-preview');
     this.cardCanvasHuman = document.getElementById('card-canvas-human');
+    this.cardCanvasMuezza = document.getElementById('card-canvas-muezza');
+    this.cardCanvasBoncuk = document.getElementById('card-canvas-boncuk');
+    this.catLivePreviewCanvas = document.getElementById('cat-live-preview');
+    this.catStudioTabContent = document.getElementById('cat-studio-tab-content');
+    this.catStudioToast = document.getElementById('cat-studio-toast');
+    this.catStudioProgressPill = document.getElementById('cat-studio-progress-pill');
+    this.catStudioNextRewardHint = document.getElementById('cat-studio-next-reward-hint');
+    this.catIdentityNote = document.getElementById('cat-identity-note');
     this.inputHeroName = document.getElementById('input-hero-name');
     this.studioTabContent = document.getElementById('studio-tab-content');
     this.studioToast = document.getElementById('studio-toast');
@@ -130,6 +151,7 @@ class Game {
 
     this.initEvents();
     this.renderStudioControls();
+    this.renderCatStudioControls();
     this.syncAudioUI();
     this.startLoop();
   }
@@ -365,10 +387,48 @@ class Game {
       this.showScreen('start');
     });
 
+    // Open Cat Wardrobe & Costume Studio from Character Select
+    on('btn-open-cat-studio', 'click', () => {
+      const targetCat = this.selectedCat === 'boncuk' ? 'boncuk' : 'muezza';
+      this.openCatStudio('select', targetCat);
+    });
+
     // Start Level Button in Character Select
     on('btn-start-game', 'click', () => {
       this.handleMainStartClick();
     });
+
+    // Cat Studio Controls
+    on('opt-cat-muezza', 'click', () => this.selectStudioCat('muezza'));
+    on('opt-cat-boncuk', 'click', () => this.selectStudioCat('boncuk'));
+    on('opt-cat-duo', 'click', () => this.selectStudioCat('duo'));
+    on('btn-cat-preview-flip', 'click', () => {
+      this.catPreviewFacingRight = !this.catPreviewFacingRight;
+    });
+    on('btn-cat-reset', 'click', () => this.resetStudioCat());
+    on('btn-cat-randomize', 'click', () => this.randomizeStudioCat());
+    on('btn-cat-studio-back', 'click', () => this.handleBackFromCatStudio());
+    on('btn-cat-studio-play', 'click', () => this.startCatGameFromStudio());
+
+    const catTabsEl = document.getElementById('cat-studio-tabs');
+    if (catTabsEl) {
+      catTabsEl.querySelectorAll('.studio-tab').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setCatStudioTab(btn.dataset.tab);
+        });
+      });
+    }
+
+    const catPoseBar = document.getElementById('cat-preview-pose-bar');
+    if (catPoseBar) {
+      catPoseBar.querySelectorAll('.pose-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setCatPreviewPose(btn.dataset.pose);
+        });
+      });
+    }
 
     // Custom Hero Studio Controls
     on('opt-hero-girl', 'click', () => {
@@ -436,7 +496,10 @@ class Game {
 
     // Pause Screen Buttons
     on('btn-resume', 'click', () => this.resumeGame());
-    on('btn-pause-wardrobe', 'click', () => this.openStudio('paused'));
+    on('btn-pause-wardrobe', 'click', () => {
+      if (this.selectedCat === 'human') this.openStudio('paused');
+      else this.openCatStudio('paused', this.selectedCat);
+    });
     on('btn-restart-level', 'click', () => {
       this.startLevel(this.currentLevelNum);
     });
@@ -445,7 +508,10 @@ class Game {
     });
 
     // Victory Screen Buttons
-    on('btn-victory-wardrobe', 'click', () => this.openStudio('victory'));
+    on('btn-victory-wardrobe', 'click', () => {
+      if (this.selectedCat === 'human') this.openStudio('victory');
+      else this.openCatStudio('victory', this.selectedCat);
+    });
     on('btn-next-level', 'click', () => {
       this.startLevel(this.currentLevelNum + 1);
     });
@@ -901,6 +967,377 @@ class Game {
     }
   }
 
+  // =========================================================================
+  // BONCUK & MÜEZZA CAT CUSTOMIZATION STUDIO & REWARD WARDROBE
+  // =========================================================================
+  openCatStudio(returnScreen = 'select', targetCat = null) {
+    this.catStudioReturnScreen = returnScreen;
+    if (window.CatWardrobeSystem) {
+      this.catProgress = window.CatWardrobeSystem.loadProgress();
+      this.catConfigs = window.CatWardrobeSystem.loadAllConfigs();
+    }
+    if (targetCat === 'boncuk' || targetCat === 'muezza' || targetCat === 'duo') {
+      this.catStudioTarget = targetCat;
+    }
+
+    const playBtn = document.getElementById('btn-cat-studio-play');
+    if (playBtn) {
+      if (returnScreen === 'paused') playBtn.textContent = 'Kaydet & Devam Et! ▶';
+      else if (returnScreen === 'victory') playBtn.textContent = 'Sonraki Bölüme Başla! 🚀🐾';
+      else playBtn.textContent = 'Maceraya Başla! 🚀🐾';
+    }
+
+    this._syncCatStudioHeaderPills();
+    this.renderCatStudioControls();
+    this.showScreen('cat-studio');
+  }
+
+  handleBackFromCatStudio() {
+    if (this.catStudioReturnScreen === 'paused') this.showScreen('paused');
+    else if (this.catStudioReturnScreen === 'victory') this.showScreen('victory');
+    else this.showScreen('select');
+  }
+
+  startCatGameFromStudio() {
+    if (this.catStudioTarget === 'boncuk' || this.catStudioTarget === 'muezza') {
+      this.selectCat(this.catStudioTarget);
+    } else if (this.selectedCat === 'human') {
+      this.selectCat('muezza');
+    }
+
+    if (this.catStudioReturnScreen === 'paused') {
+      this.showScreen('playing');
+    } else if (this.catStudioReturnScreen === 'victory') {
+      this.startLevel(this.currentLevelNum + 1);
+    } else {
+      this.startLevel(1);
+    }
+  }
+
+  _syncCatStudioHeaderPills() {
+    const btnM = document.getElementById('opt-cat-muezza');
+    const btnB = document.getElementById('opt-cat-boncuk');
+    const btnD = document.getElementById('opt-cat-duo');
+    if (btnM) btnM.classList.toggle('selected', this.catStudioTarget === 'muezza');
+    if (btnB) btnB.classList.toggle('selected', this.catStudioTarget === 'boncuk');
+    if (btnD) btnD.classList.toggle('selected', this.catStudioTarget === 'duo');
+
+    if (this.catIdentityNote) {
+      if (this.catStudioTarget === 'boncuk') {
+        this.catIdentityNote.innerHTML = '✨ <strong>Boncuk</strong> • Krem-moka tüyler, beyaz patiler &amp; mavi gözler';
+      } else if (this.catStudioTarget === 'duo') {
+        this.catIdentityNote.innerHTML = '💕 <strong>İkili Önizleme</strong> • Boncuk &amp; Müezza birlikte aksesuarlarıyla oynuyor!';
+      } else {
+        this.catIdentityNote.innerHTML = '✨ <strong>Müezza</strong> • Duman grisi kabarık tüyler &amp; kehribar gözler';
+      }
+    }
+  }
+
+  selectStudioCat(target) {
+    if (target !== 'muezza' && target !== 'boncuk' && target !== 'duo') return;
+    this.catStudioTarget = target;
+    this._syncCatStudioHeaderPills();
+    if (target === 'duo' && this.catStudioTab !== 'duo') {
+      this.setCatStudioTab('duo');
+    } else {
+      this.renderCatStudioControls();
+    }
+    try {
+      if (window.soundEngine) {
+        window.soundEngine.playMeow(target === 'boncuk' ? 'boncuk' : 'muezza');
+      }
+    } catch (err) {}
+  }
+
+  setCatStudioTab(tabName) {
+    this.catStudioTab = tabName || 'collar';
+    const tabsEl = document.getElementById('cat-studio-tabs');
+    if (tabsEl) {
+      tabsEl.querySelectorAll('.studio-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === this.catStudioTab);
+      });
+    }
+    this.renderCatStudioControls();
+  }
+
+  setCatPreviewPose(poseName) {
+    this.catPreviewPose = poseName || 'idle';
+    const bar = document.getElementById('cat-preview-pose-bar');
+    if (bar) {
+      bar.querySelectorAll('.pose-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.pose === this.catPreviewPose);
+      });
+    }
+  }
+
+  showCatStudioToast(message) {
+    if (!this.catStudioToast) return;
+    this.catStudioToast.textContent = message;
+    this.catStudioToast.classList.remove('hidden');
+    if (this.catStudioToastTimer) clearTimeout(this.catStudioToastTimer);
+    this.catStudioToastTimer = setTimeout(() => {
+      if (this.catStudioToast) this.catStudioToast.classList.add('hidden');
+    }, 2600);
+  }
+
+  _activeEditableCat() {
+    return this.catStudioTarget === 'boncuk' ? 'boncuk' : 'muezza';
+  }
+
+  equipCatItem(slot, itemId) {
+    const CWS = window.CatWardrobeSystem;
+    if (!CWS) return;
+    const catId = this._activeEditableCat();
+    const res = CWS.equipItem(catId, slot, itemId, this.catProgress);
+    if (!res.ok) {
+      const item = CWS.ALL_CAT_ITEMS.find(i => i.id === itemId);
+      const lvl = item ? item.unlockLevel : '?';
+      this.showCatStudioToast(`🔒 "${item ? item.name : ''}" Bölüm ${lvl} tamamlandığında açılır!`);
+      return;
+    }
+    this.catConfigs = CWS.loadAllConfigs();
+    this.renderCatStudioControls();
+    try { if (window.soundEngine) window.soundEngine.playEat(); } catch (err) {}
+  }
+
+  applyCatCostumeSet(setId) {
+    const CWS = window.CatWardrobeSystem;
+    if (!CWS) return;
+    const catId = this._activeEditableCat();
+    const res = CWS.applyCostumeSet(catId, setId, this.catProgress);
+    const set = CWS.COSTUME_SETS.find(s => s.id === setId);
+    if (!res.ok) {
+      this.showCatStudioToast(`🔒 "${set ? set.name : ''}" Bölüm ${set ? set.unlockLevel : '?'} tamamlandığında açılır!`);
+      return;
+    }
+    this.catConfigs = CWS.loadAllConfigs();
+    this.renderCatStudioControls();
+    this.showCatStudioToast(`✨ ${catId === 'boncuk' ? 'Boncuk' : 'Müezza'} için "${set.name}" giydirildi! Parçaları ayrı ayrı değiştirebilirsin.`);
+    try { if (window.soundEngine) window.soundEngine.playToyCollect(); } catch (err) {}
+  }
+
+  applyCatDuoSet(duoId) {
+    const CWS = window.CatWardrobeSystem;
+    if (!CWS) return;
+    const res = CWS.applyDuoSet(duoId, this.catProgress);
+    const duo = CWS.DUO_SETS.find(d => d.id === duoId);
+    if (!res.ok) {
+      this.showCatStudioToast(`🔒 "${duo ? duo.name : ''}" Bölüm ${duo ? duo.unlockLevel : '?'} tamamlandığında açılır!`);
+      return;
+    }
+    this.catConfigs = CWS.loadAllConfigs();
+    this.catStudioTarget = 'duo';
+    this._syncCatStudioHeaderPills();
+    this.renderCatStudioControls();
+    this.showCatStudioToast(`💕 "${duo.name}" hem Boncuk hem Müezza'ya uygulandı!`);
+    try { if (window.soundEngine) window.soundEngine.playToyCollect(); } catch (err) {}
+  }
+
+  resetStudioCat() {
+    const CWS = window.CatWardrobeSystem;
+    if (!CWS) return;
+    if (this.catStudioTarget === 'duo') {
+      CWS.resetCatConfig('muezza');
+      CWS.resetCatConfig('boncuk');
+    } else {
+      CWS.resetCatConfig(this._activeEditableCat());
+    }
+    this.catConfigs = CWS.loadAllConfigs();
+    this.renderCatStudioControls();
+    try { if (window.soundEngine) window.soundEngine.playEat(); } catch (err) {}
+  }
+
+  randomizeStudioCat() {
+    const CWS = window.CatWardrobeSystem;
+    if (!CWS) return;
+    if (this.catStudioTarget === 'duo') {
+      CWS.randomizeCat('muezza', this.catProgress);
+      CWS.randomizeCat('boncuk', this.catProgress);
+    } else {
+      CWS.randomizeCat(this._activeEditableCat(), this.catProgress);
+    }
+    this.catConfigs = CWS.loadAllConfigs();
+    this.renderCatStudioControls();
+    try { if (window.soundEngine) window.soundEngine.playToyCollect(); } catch (err) {}
+  }
+
+  renderCatStudioControls() {
+    const CWS = window.CatWardrobeSystem;
+    if (!CWS || !this.catStudioTabContent) return;
+
+    this.catProgress = CWS.loadProgress();
+    const catId = this._activeEditableCat();
+    const activeCfg = CWS.getCatConfig(catId);
+    const stats = CWS.getUnlockStats(this.catProgress);
+
+    if (this.catStudioProgressPill) {
+      this.catStudioProgressPill.textContent = `🎁 Kedi Ödülleri: ${stats.unlockedRewards} / ${stats.totalRewards}`;
+    }
+    if (this.catStudioNextRewardHint) {
+      if (stats.nextMilestoneLevel && stats.nextRewardItem) {
+        this.catStudioNextRewardHint.textContent = `🎁 Sonraki ödül: Bölüm ${stats.nextMilestoneLevel} (${stats.nextRewardItem.name})`;
+      } else {
+        this.catStudioNextRewardHint.textContent = '🏆 Tüm kedi aksesuar ve kostümleri açıldı!';
+      }
+    }
+
+    const container = this.catStudioTabContent;
+    container.innerHTML = '';
+
+    const forTagHtml = (forCat) => {
+      if (forCat === 'boncuk') return '<span class="cat-for-tag for-boncuk">Boncuk</span>';
+      if (forCat === 'muezza') return '<span class="cat-for-tag for-muezza">Müezza</span>';
+      return '<span class="cat-for-tag for-both">İkisi</span>';
+    };
+
+    const addSlotGrid = (title, items, slot, compact = false) => {
+      const sec = document.createElement('div');
+      const targetName = catId === 'boncuk' ? 'Boncuk' : 'Müezza';
+      sec.innerHTML = `<div class="opt-section-label"><span>${title}</span><span class="opt-section-sub">Düzenlenen: ${targetName} (her parça iki kediye de takılabilir)</span></div>`;
+      const grid = document.createElement('div');
+      grid.className = 'item-options-grid' + (compact ? ' compact' : '');
+
+      items.forEach(item => {
+        const unlocked = CWS.isItemUnlocked(item.id, this.catProgress);
+        const isSelected = activeCfg[slot] === item.id && unlocked;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'item-opt-btn' + (isSelected ? ' selected' : '') + (!unlocked ? ' locked' : '');
+        btn.dataset.slot = slot;
+        btn.dataset.value = item.id;
+        btn.title = item.desc || item.name;
+
+        const badge = !unlocked
+          ? `<span class="item-lock-tag">🔒 Bölüm ${item.unlockLevel}</span>`
+          : (item.unlockLevel > 0 ? `<span class="item-milestone-tag">✨ Bölüm ${item.unlockLevel}</span>` : '');
+
+        btn.innerHTML = `
+          <span class="item-opt-icon">${unlocked ? item.icon : '🔒'}</span>
+          <span class="item-opt-name">${item.name}</span>
+          ${item.id !== 'none' ? forTagHtml(item.forCat) : ''}
+          ${badge}
+        `;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.equipCatItem(slot, item.id);
+        });
+        grid.appendChild(btn);
+      });
+      sec.appendChild(grid);
+      container.appendChild(sec);
+    };
+
+    if (this.catStudioTab === 'collar') {
+      addSlotGrid('📿 Renkli & Özel Tasmalar', CWS.COLLARS, 'collar', false);
+      addSlotGrid('🏷️ Sallanan İsimlikler', CWS.TAGS, 'tag', true);
+    } else if (this.catStudioTab === 'neck') {
+      addSlotGrid('🧣 Fularlar, Papyonlar & Çelenkler', CWS.NECKWEAR, 'neckwear', false);
+      addSlotGrid('👓 Gözlük & Yüz Detayları', CWS.EYE_ACCESSORIES, 'eyeAcc', true);
+    } else if (this.catStudioTab === 'head') {
+      addSlotGrid('🎩 Şapka, Fiyonk, Çiçek & Kostüm Başlıkları', CWS.HEADWEAR, 'headwear', true);
+    } else if (this.catStudioTab === 'costume') {
+      // 1. One-Click Complete Costume Sets
+      const setSec = document.createElement('div');
+      setSec.innerHTML = `<div class="opt-section-label"><span>✨ Tek Tık Tam Kostüm Setleri</span><span class="opt-section-sub">Parçaları sonra ayrı ayrı değiştirebilirsin</span></div>`;
+      const setGrid = document.createElement('div');
+      setGrid.className = 'item-options-grid';
+      CWS.COSTUME_SETS.forEach(set => {
+        const unlocked = CWS.isItemUnlocked(set.id, this.catProgress);
+        const isActive = unlocked && activeCfg.outfit === set.pieces.outfit;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'item-opt-btn' + (isActive ? ' selected' : '') + (!unlocked ? ' locked' : '');
+        btn.dataset.set = set.id;
+        btn.title = set.desc;
+        btn.innerHTML = `
+          <span class="item-opt-icon">${unlocked ? set.icon : '🔒'}</span>
+          <span class="item-opt-name">${set.name}</span>
+          ${forTagHtml(set.forCat)}
+          <span class="${unlocked ? 'item-milestone-tag' : 'item-lock-tag'}">${unlocked ? '✨ Tam Set' : '🔒 Bölüm ' + set.unlockLevel}</span>
+        `;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.applyCatCostumeSet(set.id);
+        });
+        setGrid.appendChild(btn);
+      });
+      setSec.appendChild(setGrid);
+      container.appendChild(setSec);
+
+      // 2. Individual Mix-and-Match Outfit Bodies
+      addSlotGrid('👗 Parça Kostüm Kıyafetleri (Serbest Kombin)', CWS.OUTFITS, 'outfit', true);
+    } else if (this.catStudioTab === 'duo') {
+      const duoSec = document.createElement('div');
+      duoSec.innerHTML = `<div class="opt-section-label"><span>💕 İkili Özel Kostüm Setleri (8 Tema)</span><span class="opt-section-sub">Boncuk &amp; Müezza birlikte uyumlu giyinir!</span></div>`;
+      const duoGrid = document.createElement('div');
+      duoGrid.className = 'duo-sets-grid';
+      CWS.DUO_SETS.forEach(duo => {
+        const unlocked = CWS.isItemUnlocked(duo.id, this.catProgress);
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'duo-set-card' + (!unlocked ? ' locked' : '');
+        card.dataset.duo = duo.id;
+        card.innerHTML = `
+          <div class="duo-set-top">
+            <span class="duo-set-title">${unlocked ? duo.icon : '🔒'} ${duo.name}</span>
+            <span class="${unlocked ? 'item-milestone-tag' : 'item-lock-tag'}">${unlocked ? '✓ Açık' : '🔒 B.' + duo.unlockLevel}</span>
+          </div>
+          <div class="duo-set-desc">${duo.desc}</div>
+        `;
+        card.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.applyCatDuoSet(duo.id);
+        });
+        duoGrid.appendChild(card);
+      });
+      duoSec.appendChild(duoGrid);
+      container.appendChild(duoSec);
+    } else if (this.catStudioTab === 'rewards') {
+      const pct = stats.totalRewards > 0 ? Math.round((stats.unlockedRewards / stats.totalRewards) * 100) : 100;
+      const road = document.createElement('div');
+      road.className = 'wardrobe-roadmap-box';
+      road.innerHTML = `
+        <div><strong>🏆 Tamamlanan En Yüksek Bölüm: ${stats.highestLevel}</strong> &nbsp;•&nbsp; Açılan Kedi Ödülleri: <strong>${stats.unlockedRewards}/${stats.totalRewards}</strong></div>
+        <div style="font-size:10.5px;margin-top:3px;color:#8c634d;">Bölüm geçtikçe tasma, fular, Arı (B.5), Balerin &amp; Şık Takım (B.8), Polis (B.10), Deniz Kızı (B.15), Asker/Dedektif (B.20), Astronot (B.25) ve Safari İkilisi (B.30) açılır!</div>
+        <div class="wardrobe-progress-bar"><div class="wardrobe-progress-fill" style="width:${pct}%"></div></div>
+      `;
+      container.appendChild(road);
+
+      const rwSec = document.createElement('div');
+      rwSec.innerHTML = `<div class="opt-section-label"><span>🎁 Tüm Kedi Seviye Ödülleri</span><span class="opt-section-sub">Açılanlara tıklayıp hemen tak!</span></div>`;
+      const rwGrid = document.createElement('div');
+      rwGrid.className = 'item-options-grid';
+
+      const rewards = CWS.ALL_CAT_ITEMS
+        .filter(i => i.unlockLevel > 0)
+        .sort((a, b) => a.unlockLevel - b.unlockLevel);
+
+      rewards.forEach(item => {
+        const unlocked = CWS.isItemUnlocked(item.id, this.catProgress);
+        const equipped = unlocked && activeCfg[item.slot] === item.id;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'item-opt-btn' + (equipped ? ' selected' : '') + (!unlocked ? ' locked' : '');
+        btn.dataset.slot = item.slot;
+        btn.dataset.value = item.id;
+        btn.title = item.desc || item.name;
+        btn.innerHTML = `
+          <span class="item-opt-icon">${unlocked ? item.icon : '🔒'}</span>
+          <span class="item-opt-name">${item.name}</span>
+          ${forTagHtml(item.forCat)}
+          <span class="${unlocked ? 'item-milestone-tag' : 'item-lock-tag'}">${unlocked ? '✓ Açık' : '🔒 Bölüm ' + item.unlockLevel}</span>
+        `;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.equipCatItem(item.slot, item.id);
+        });
+        rwGrid.appendChild(btn);
+      });
+      rwSec.appendChild(rwGrid);
+      container.appendChild(rwSec);
+    }
+  }
+
   showScreen(screenName) {
     // Once the user navigates away from Intro, never replay the first-load entrance animation
     if (screenName !== 'start' && !this.hasPlayedIntro) {
@@ -913,6 +1350,7 @@ class Game {
       this.screenStart,
       this.screenCharacter,
       this.screenCustomHero,
+      this.screenCatStudio,
       this.screenHowto,
       this.screenPause,
       this.screenVictory,
@@ -942,6 +1380,7 @@ class Game {
     if (screenName === 'start') target = this.screenStart;
     else if (screenName === 'select') target = this.screenCharacter;
     else if (screenName === 'custom-hero') target = this.screenCustomHero;
+    else if (screenName === 'cat-studio') target = this.screenCatStudio;
     else if (screenName === 'howto') target = this.screenHowto;
     else if (screenName === 'paused') target = this.screenPause;
     else if (screenName === 'victory') target = this.screenVictory;
@@ -1031,7 +1470,10 @@ class Game {
   pauseGame() {
     if (this.gameState === 'playing') {
       if (this.btnPauseWardrobe) {
-        this.btnPauseWardrobe.classList.toggle('hidden', this.selectedCat !== 'human');
+        this.btnPauseWardrobe.classList.remove('hidden');
+        this.btnPauseWardrobe.textContent = this.selectedCat === 'human'
+          ? '👗 Kıyafet Dolabı'
+          : '🎀 Kedi Dolabı & Kostümler';
       }
       this.showScreen('paused');
     }
@@ -1182,18 +1624,27 @@ class Game {
       this.player.state = 'hug';
     }
 
-    // Check & permanently unlock level wardrobe rewards!
-    let newlyUnlocked = [];
+    // Check & permanently unlock BOTH Human & Cat level wardrobe rewards!
+    let newlyUnlockedHero = [];
     if (window.WardrobeSystem) {
       const res = window.WardrobeSystem.checkAndUnlockForLevel(this.currentLevelNum);
       this.wardrobeProgress = res.progress;
-      newlyUnlocked = res.newlyUnlocked || [];
+      newlyUnlockedHero = res.newlyUnlocked || [];
     }
+
+    let newlyUnlockedCats = [];
+    if (window.CatWardrobeSystem) {
+      const cres = window.CatWardrobeSystem.checkAndUnlockForLevel(this.currentLevelNum);
+      this.catProgress = cres.progress;
+      newlyUnlockedCats = cres.newlyUnlocked || [];
+    }
+
+    const totalNewRewards = newlyUnlockedHero.length + newlyUnlockedCats.length;
 
     try {
       if (window.soundEngine) {
         window.soundEngine.playVictory();
-        if (newlyUnlocked.length > 0) {
+        if (totalNewRewards > 0) {
           setTimeout(() => {
             try { if (window.soundEngine) window.soundEngine.playToyCollect(); } catch (e) {}
           }, 380);
@@ -1215,26 +1666,48 @@ class Game {
       if (this.selectedCat === 'human') {
         vMsg.textContent = `${this.heroConfig.name}, Boncuk ve Müezza'yı başarıyla kurtardı! İki sevimli dost koşa koşa gelip sıcacık sarıldı! 💖🐾`;
       } else {
-        vMsg.textContent = "Boncuk ve Müezza burun buruna değdi ve sıcacık kucaklaştı!";
+        vMsg.textContent = "Boncuk ve Müezza burun buruna değdi, aksesuarlarıyla oynayıp sıcacık kucaklaştı! 💖🐾";
       }
     }
 
-    // Show celebratory reward banner if new wardrobe items unlocked (filtered for active hero gender)!
+    // Show celebratory reward banner with newly unlocked Cat & Hero rewards + cat badges!
     const WS = window.WardrobeSystem;
     const rewardGender = this.heroConfig.gender === 'boy' ? 'boy' : 'girl';
-    const visibleUnlocked = WS
-      ? newlyUnlocked.filter(item => WS.isItemAllowedForGender(item, rewardGender))
-      : newlyUnlocked;
+    const visibleHeroUnlocked = WS
+      ? newlyUnlockedHero.filter(item => WS.isItemAllowedForGender(item, rewardGender))
+      : newlyUnlockedHero;
+
+    const allChips = [];
+    if (this.selectedCat === 'human') {
+      visibleHeroUnlocked.forEach((item) => {
+        const icon = WS ? WS.getItemDisplayIcon(item, rewardGender) : item.icon;
+        const name = WS ? WS.getItemDisplayName(item, rewardGender) : item.name;
+        allChips.push({ html: `${icon} ${name}` });
+      });
+      newlyUnlockedCats.forEach((item) => {
+        const who = item.forCat === 'boncuk' ? 'Boncuk' : (item.forCat === 'muezza' ? 'Müezza' : 'Kediler');
+        allChips.push({ html: `${item.icon} ${item.name} <em>(${who})</em>` });
+      });
+    } else {
+      // Prioritize items unlocked at this exact milestone level first so featured costumes shine!
+      const sortedCats = [...newlyUnlockedCats].sort((a, b) => (b.unlockLevel || 0) - (a.unlockLevel || 0));
+      sortedCats.forEach((item) => {
+        const who = item.forCat === 'boncuk' ? 'Boncuk' : (item.forCat === 'muezza' ? 'Müezza' : (item.forCat === 'duo' ? 'İkili' : 'İkisi'));
+        allChips.push({ html: `${item.icon} ${item.name} <em>(${who})</em>` });
+      });
+    }
+
+    const maxVisible = 4;
+    const rewardChips = allChips.slice(0, maxVisible).map((c, idx) =>
+      `<span class="reward-chip" style="animation-delay:${idx * 0.03}s">${c.html}</span>`
+    );
+    if (allChips.length > maxVisible) {
+      rewardChips.push(`<span class="reward-chip">+${allChips.length - maxVisible} ödül daha! 🎁</span>`);
+    }
 
     if (this.victoryRewardBanner && this.victoryRewardItems) {
-      if (visibleUnlocked.length > 0) {
-        this.victoryRewardItems.innerHTML = visibleUnlocked
-          .map(item => {
-            const icon = WS ? WS.getItemDisplayIcon(item, rewardGender) : item.icon;
-            const name = WS ? WS.getItemDisplayName(item, rewardGender) : item.name;
-            return `<span class="reward-chip">${icon} ${name}</span>`;
-          })
-          .join('');
+      if (rewardChips.length > 0) {
+        this.victoryRewardItems.innerHTML = rewardChips.join('');
         this.victoryRewardBanner.classList.remove('hidden');
       } else {
         this.victoryRewardBanner.classList.add('hidden');
@@ -1242,8 +1715,10 @@ class Game {
     }
 
     if (this.btnVictoryWardrobe) {
-      const showBtn = this.selectedCat === 'human' || visibleUnlocked.length > 0;
-      this.btnVictoryWardrobe.classList.toggle('hidden', !showBtn);
+      this.btnVictoryWardrobe.classList.remove('hidden');
+      this.btnVictoryWardrobe.textContent = this.selectedCat === 'human'
+        ? '👗 Dolapta Dene'
+        : '🎀 Kedi Dolabında Dene';
     }
 
     const percent = this.totalTreatsInLevel > 0 ? (this.collectedTreatsInLevel / this.totalTreatsInLevel) : 1;
@@ -1343,8 +1818,8 @@ class Game {
 
           if (c.isSpecial) {
             this.score += 150;
-            if (this.player.catType === 'human' && typeof this.player.triggerCelebrate === 'function') {
-              this.player.triggerCelebrate(36);
+            if (typeof this.player.triggerCelebrate === 'function') {
+              this.player.triggerCelebrate(32);
             }
             try {
               if (window.soundEngine) window.soundEngine.playToyCollect();
@@ -1615,6 +2090,33 @@ class Game {
       }
     }
 
+    // 2a. Karakter Seçim Ekranındaki Canlı Müezza & Boncuk Kart Önizlemeleri (Kıyafet & Aksesuarlarıyla!)
+    if ((this.gameState === 'select' || this.gameState === 'start') && window.CatRenderer) {
+      const drawCardCat = (canvas, catId, bg1, bg2) => {
+        if (!canvas) return;
+        const cctx = canvas.getContext('2d');
+        if (!cctx) return;
+        cctx.save();
+        cctx.setTransform(2, 0, 0, 2, 0, 0);
+        cctx.clearRect(0, 0, 140, 124);
+        const g = cctx.createLinearGradient(0, 0, 0, 124);
+        g.addColorStop(0, bg1);
+        g.addColorStop(1, bg2);
+        cctx.fillStyle = g;
+        cctx.fillRect(0, 0, 140, 124);
+
+        cctx.fillStyle = 'rgba(134, 239, 172, 0.34)';
+        cctx.beginPath();
+        cctx.ellipse(70, 111, 52, 8.5, 0, 0, Math.PI * 2);
+        cctx.fill();
+
+        window.CatRenderer.draw(cctx, catId, 16, 20, 108, 90, 'idle', catId === 'muezza', this.animTimer, false);
+        cctx.restore();
+      };
+      drawCardCat(this.cardCanvasMuezza, 'muezza', '#f5f8fc', '#e7effa');
+      drawCardCat(this.cardCanvasBoncuk, 'boncuk', '#fff9f2', '#fceef6');
+    }
+
     // 2. Karakter Seçim Ekranındaki 3. Kart Önizlemesi ("Sen Kurtar!" Kartı)
     if (this.cardCanvasHuman && (this.gameState === 'select' || this.gameState === 'start')) {
       const hctx = this.cardCanvasHuman.getContext('2d');
@@ -1665,6 +2167,25 @@ class Game {
           this.animTimer
         );
         pctx.restore();
+      }
+    }
+
+    // 4. Kedi Dolabı & Kostüm Stüdyosu Büyük Canlı Önizleme (2x HiDPI crisp — Tekli veya İkili!)
+    if (this.gameState === 'cat-studio' && this.catLivePreviewCanvas && window.CatRenderer) {
+      const cctx = this.catLivePreviewCanvas.getContext('2d');
+      if (cctx) {
+        cctx.save();
+        cctx.setTransform(2, 0, 0, 2, 0, 0);
+        window.CatRenderer.drawStudioPreview(
+          cctx,
+          230,
+          220,
+          this.catStudioTarget,
+          this.catPreviewPose,
+          this.catPreviewFacingRight,
+          this.animTimer
+        );
+        cctx.restore();
       }
     }
   }

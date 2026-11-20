@@ -299,12 +299,18 @@ class Player {
         this.state = 'idle';
       }
     } else {
-      if (!this.onGround) {
+      if (this.isHurt && this.invulnTimer > 60) {
+        this.state = 'hurt';
+      } else if (this.celebrateTimer > 0 && this.onGround) {
+        this.state = 'celebrate';
+      } else if (!this.onGround) {
         this.state = this.vy < 0 ? 'jump' : 'fall';
       } else if (this.landSquashTimer > 0) {
         this.state = 'land';
-      } else if (Math.abs(this.vx) > 0.4) {
+      } else if (Math.abs(this.vx) > 2.6) {
         this.state = 'run';
+      } else if (Math.abs(this.vx) > 0.25) {
+        this.state = 'walk';
       } else {
         this.state = 'idle';
       }
@@ -388,24 +394,32 @@ class Player {
         this.heroConfig
       );
     } else if (this.catType === 'boncuk') {
+      const drawW = 62;
+      const drawH = 52;
+      const drawX = this.x + (this.width - drawW) / 2;
+      const drawY = this.y + this.height - drawH;
       SpriteRenderer.drawBoncuk(
         ctx,
-        this.x - 4,
-        this.y - 4,
-        this.width + 8,
-        this.height + 8,
+        drawX,
+        drawY,
+        drawW,
+        drawH,
         this.state,
         this.facingRight,
         this.animTimer,
         this.isHurt
       );
     } else {
+      const drawW = 64;
+      const drawH = 54;
+      const drawX = this.x + (this.width - drawW) / 2;
+      const drawY = this.y + this.height - drawH;
       SpriteRenderer.drawMuezza(
         ctx,
-        this.x - 4,
-        this.y - 4,
-        this.width + 8,
-        this.height + 8,
+        drawX,
+        drawY,
+        drawW,
+        drawH,
         this.state,
         this.facingRight,
         this.animTimer,

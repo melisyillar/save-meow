@@ -247,7 +247,7 @@
           <div class="char-card selected" id="card-muezza" data-cat="muezza" onclick="if(window.game) window.game.selectCat('muezza');">
             <div class="card-ribbon">Seçilen Kedi</div>
             <div class="char-canvas-box">
-              <img src="assets/muezza.png" alt="Müezza" class="char-card-img" id="card-img-muezza">
+              <canvas id="card-canvas-muezza" class="char-live-canvas" width="280" height="248"></canvas>
             </div>
             <h3 class="char-name muezza-text">Müezza</h3>
             <div class="char-breed">Scottish & British Longhair Melezi</div>
@@ -266,7 +266,7 @@
           <div class="char-card" id="card-boncuk" data-cat="boncuk" onclick="if(window.game) window.game.selectCat('boncuk');">
             <div class="card-ribbon">Seçilen Kedi</div>
             <div class="char-canvas-box">
-              <img src="assets/boncuk.png" alt="Boncuk" class="char-card-img" id="card-img-boncuk">
+              <canvas id="card-canvas-boncuk" class="char-live-canvas" width="280" height="248"></canvas>
             </div>
             <h3 class="char-name boncuk-text">Boncuk</h3>
             <div class="char-breed">Siyam & British Shorthair Melezi</div>
@@ -302,10 +302,13 @@
         </div>
 
         <div class="select-actions">
-          <button id="btn-back-to-start" class="glow-button btn-secondary" onclick="if(window.game) window.game.showScreen('start');">
+          <button id="btn-back-to-start" class="glow-button btn-secondary" type="button">
             ⬅ Geri
           </button>
-          <button id="btn-start-game" class="glow-button btn-primary btn-large" onclick="if(window.game) window.game.handleMainStartClick();">
+          <button id="btn-open-cat-studio" class="glow-button btn-cat-wardrobe" type="button">
+            🎀 Kedi Dolabı &amp; Kostümler
+          </button>
+          <button id="btn-start-game" class="glow-button btn-primary btn-large" type="button">
             <span id="selected-cat-name">Müezza</span> ile Maceraya Atıl! 🚀
           </button>
         </div>
@@ -378,6 +381,75 @@
             🎁 Sonraki ödül: Bölüm 3
           </div>
           <button id="btn-start-hero-game" class="glow-button btn-primary btn-large" type="button">
+            Maceraya Başla! 🚀🐾
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2c. BONCUK & MÜEZZA KEDİ ÖZELLEŞTİRME, KOSTÜM VE ÖDÜL DOLABI -->
+    <div id="screen-cat-studio" class="screen-modal hidden">
+      <div class="glass-panel custom-studio-card cat-studio-card">
+        <div class="studio-header">
+          <div class="studio-title-group">
+            <h2 class="studio-title">🐱 Kedi Dolabı &amp; Kostümler</h2>
+            <span class="studio-reward-pill" id="cat-studio-progress-pill">🎁 Kedi Ödülleri: 0 / 50</span>
+          </div>
+          <div class="studio-gender-switch cat-studio-switcher">
+            <button id="opt-cat-muezza" class="gender-pill selected" type="button">🐱 Müezza</button>
+            <button id="opt-cat-boncuk" class="gender-pill" type="button">🐱 Boncuk</button>
+            <button id="opt-cat-duo" class="gender-pill" type="button">💕 İkili</button>
+          </div>
+        </div>
+
+        <div class="studio-body">
+          <!-- SOL SÜTUN: Canlı 2x HiDPI Kedi Önizleme & Etkileşimli Animasyon Barı -->
+          <div class="studio-preview-col">
+            <div class="studio-canvas-frame cat-canvas-frame">
+              <canvas id="cat-live-preview" width="460" height="440"></canvas>
+              <button id="btn-cat-preview-flip" class="preview-mini-btn preview-flip-btn" type="button" title="Yön Çevir">⇄</button>
+              <button id="btn-cat-reset" class="preview-mini-btn preview-reset-btn" type="button" title="Varsayılana Dön">♻️</button>
+              <button id="btn-cat-randomize" class="preview-mini-btn preview-rand-btn" type="button" title="Rastgele Kombin">🎲</button>
+            </div>
+
+            <div class="preview-pose-bar" id="cat-preview-pose-bar">
+              <button class="pose-btn active" data-pose="idle" type="button">Dur</button>
+              <button class="pose-btn" data-pose="walk" type="button">Yürü</button>
+              <button class="pose-btn" data-pose="run" type="button">Koş</button>
+              <button class="pose-btn" data-pose="jump" type="button">Zıpla</button>
+              <button class="pose-btn" data-pose="interact" type="button">Etkileşim</button>
+              <button class="pose-btn" data-pose="celebrate" type="button">Sevin</button>
+            </div>
+
+            <div class="cat-identity-note" id="cat-identity-note">
+              ✨ <strong>Müezza</strong> • Duman grisi kabarık tüyler &amp; kehribar gözler
+            </div>
+          </div>
+
+          <!-- SAĞ SÜTUN: Aksesuarlar, Parça Kostümler, Tam Setler, İkili Setler & Ödüller -->
+          <div class="studio-controls-col">
+            <div class="studio-tabs" id="cat-studio-tabs">
+              <button class="studio-tab active" data-tab="collar" type="button">📿 Tasma</button>
+              <button class="studio-tab" data-tab="neck" type="button">🧣 Fular</button>
+              <button class="studio-tab" data-tab="head" type="button">🎩 Başlık</button>
+              <button class="studio-tab" data-tab="costume" type="button">✨ Kostüm</button>
+              <button class="studio-tab" data-tab="duo" type="button">💕 İkili</button>
+              <button class="studio-tab" data-tab="rewards" type="button">🎁 Ödüller</button>
+            </div>
+
+            <div class="studio-tab-content" id="cat-studio-tab-content"></div>
+            <div class="studio-toast hidden" id="cat-studio-toast"></div>
+          </div>
+        </div>
+
+        <div class="studio-footer">
+          <button id="btn-cat-studio-back" class="glow-button btn-secondary" type="button">
+            ⬅ Geri
+          </button>
+          <div class="studio-next-reward-hint" id="cat-studio-next-reward-hint">
+            🎁 Sonraki ödül: Bölüm 2
+          </div>
+          <button id="btn-cat-studio-play" class="glow-button btn-primary btn-large" type="button">
             Maceraya Başla! 🚀🐾
           </button>
         </div>
@@ -549,7 +621,9 @@
   <!-- JavaScript Modülleri -->
   <script src="js/audio.js"></script>
   <script src="js/wardrobe.js"></script>
+  <script src="js/cat-wardrobe.js"></script>
   <script src="js/human-renderer.js"></script>
+  <script src="js/cat-renderer.js"></script>
   <script src="js/sprites.js"></script>
   <script src="js/physics.js"></script>
   <script src="js/entities.js"></script>
