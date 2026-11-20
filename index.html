@@ -151,14 +151,105 @@
               👉 Boncuk'u seçersen: <strong>Müezza</strong> labirentin sonunda bekler!
             </div>
           </div>
+
+          <!-- Üçüncü Kart: Sen Kurtar! (İnsan Karakteri) -->
+          <div class="char-card" id="card-human" data-cat="human" onclick="if(window.game) window.game.selectCat('human');">
+            <div class="card-ribbon">Seçilen Kahraman</div>
+            <div class="char-canvas-box">
+              <canvas id="card-canvas-human" width="140" height="124" style="border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></canvas>
+            </div>
+            <h3 class="char-name human-text">Sen Kurtar! ✨</h3>
+            <div class="char-breed">Özel Kahraman & Kıyafet Dolabı</div>
+            <ul class="char-traits">
+              <li>💇 <strong>Saç & Yüz:</strong> 17 saç modeli, 11 renk, 6 göz rengi</li>
+              <li>👗 <strong>Dolap:</strong> Kıyafet, ayakkabı, şapka & gözlük</li>
+              <li>🎁 <strong>Ödüller:</strong> Bölüm geçtikçe açılan özel kostümler</li>
+              <li>💖 <strong>Görev:</strong> Hem Boncuk hem Müezza'yı kurtar!</li>
+            </ul>
+            <div class="partner-notice" style="background:#fdf2f8;border-color:#fbcfe8;color:#be185d;">
+              👉 Sen Kurtar'ı seçersen: <strong>Hem Boncuk hem Müezza</strong> birlikte kurtarılır!
+            </div>
+          </div>
         </div>
 
         <div class="select-actions">
           <button id="btn-back-to-start" class="glow-button btn-secondary" onclick="if(window.game) window.game.showScreen('start');">
             ⬅ Geri
           </button>
-          <button id="btn-start-game" class="glow-button btn-primary btn-large" onclick="if(window.game) window.game.startLevel(1);">
+          <button id="btn-start-game" class="glow-button btn-primary btn-large" onclick="if(window.game) window.game.handleMainStartClick();">
             <span id="selected-cat-name">Müezza</span> ile Maceraya Atıl! 🚀
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2b. GELİŞMİŞ İNSAN KARAKTERİ OLUŞTURMA & KIYAFET DOLABI -->
+    <div id="screen-custom-hero" class="screen-modal hidden">
+      <div class="glass-panel custom-studio-card">
+        <!-- Üst Başlık ve Kız/Erkek Seçimi -->
+        <div class="studio-header">
+          <div class="studio-title-group">
+            <h2 class="studio-title">✨ Kahramanını Tasarla</h2>
+            <span class="studio-reward-pill" id="studio-progress-pill">🎁 Ödüller: 0 / 16</span>
+          </div>
+          <div class="studio-gender-switch">
+            <button id="opt-hero-girl" class="gender-pill selected" type="button">👧 Kız</button>
+            <button id="opt-hero-boy" class="gender-pill" type="button">👦 Erkek</button>
+          </div>
+        </div>
+
+        <!-- 2 Sütunlu Ana Alan: Sol Büyük Canlı Önizleme | Sağ Özelleştirme & Dolap -->
+        <div class="studio-body">
+          <!-- SOL SÜTUN: Büyük Canlı Karakter Önizlemesi -->
+          <div class="studio-preview-col">
+            <div class="studio-canvas-frame">
+              <canvas id="hero-live-preview" width="460" height="520"></canvas>
+              <button id="btn-preview-flip" class="preview-mini-btn preview-flip-btn" type="button" title="Yön Çevir">⇄</button>
+              <button id="btn-hero-randomize" class="preview-mini-btn preview-rand-btn" type="button" title="Rastgele Kombin">🎲</button>
+            </div>
+
+            <!-- Animasyon Önizleme Barı -->
+            <div class="preview-pose-bar" id="preview-pose-bar">
+              <button class="pose-btn active" data-pose="idle" type="button">Dur</button>
+              <button class="pose-btn" data-pose="walk" type="button">Yürü</button>
+              <button class="pose-btn" data-pose="run" type="button">Koş</button>
+              <button class="pose-btn" data-pose="jump" type="button">Zıpla</button>
+              <button class="pose-btn" data-pose="celebrate" type="button">Sevin</button>
+              <button class="pose-btn" data-pose="hug" type="button">Sarıl</button>
+            </div>
+
+            <!-- İsim Giriş Kutusu -->
+            <div class="studio-name-box">
+              <span class="input-icon">✨</span>
+              <input type="text" id="input-hero-name" maxlength="16" placeholder="Karakterinin ismi..." value="Maya">
+            </div>
+          </div>
+
+          <!-- SAĞ SÜTUN: Sekmeli Gelişmiş Özelleştirme & Dolap -->
+          <div class="studio-controls-col">
+            <div class="studio-tabs" id="studio-tabs">
+              <button class="studio-tab active" data-tab="hair" type="button">💇 Saç</button>
+              <button class="studio-tab" data-tab="face" type="button">👀 Yüz</button>
+              <button class="studio-tab" data-tab="clothes" type="button">👗 Kıyafet</button>
+              <button class="studio-tab" data-tab="accessories" type="button">🎀 Aksesuar</button>
+              <button class="studio-tab" data-tab="wardrobe" type="button">👑 Dolap</button>
+            </div>
+
+            <div class="studio-tab-content" id="studio-tab-content"></div>
+            <div class="studio-toast hidden" id="studio-toast"></div>
+          </div>
+        </div>
+
+        <!-- Alt Aksiyon Çubuğu -->
+        <div class="studio-footer">
+          <button id="btn-back-to-char-select" class="glow-button btn-secondary" type="button">
+            ⬅ Geri
+          </button>
+          <div class="studio-next-reward-hint" id="studio-next-reward-hint">
+            🎁 Sonraki ödül: Bölüm 3
+          </div>
+          <button id="btn-start-hero-game" class="glow-button btn-primary btn-large" type="button">
+            Maceraya Başla! 🚀🐾
           </button>
         </div>
       </div>
@@ -213,6 +304,9 @@
           <button id="btn-resume" class="glow-button btn-primary">
             ▶ Maceraya Devam Et
           </button>
+          <button id="btn-pause-wardrobe" class="glow-button btn-secondary hidden">
+            👗 Kıyafet Dolabı
+          </button>
           <button id="btn-restart-level" class="glow-button btn-secondary">
             🔄 Bu Bölümü Yeniden Başlat
           </button>
@@ -231,7 +325,13 @@
         <p class="victory-sub" id="victory-message">Boncuk ve Müezza burun buruna değdi ve sıcacık kucaklaştı!</p>
 
         <div class="reunion-animation-box">
-          <canvas id="victory-canvas" width="280" height="140"></canvas>
+          <canvas id="victory-canvas" width="320" height="145"></canvas>
+        </div>
+
+        <!-- Yeni Kıyafet / Aksesuar Ödülü Tebrik Kutusu -->
+        <div id="victory-reward-banner" class="victory-reward-banner hidden">
+          <div class="reward-banner-title">🎁 ✨ Tebrikler! Yeni Kıyafet Ödülü Açıldı! ✨ 🎁</div>
+          <div class="reward-items-list" id="victory-reward-items"></div>
         </div>
 
         <div class="stats-summary-box">
@@ -254,6 +354,9 @@
         </div>
 
         <div class="victory-actions">
+          <button id="btn-victory-wardrobe" class="glow-button btn-secondary hidden">
+            👗 Dolapta Dene
+          </button>
           <button id="btn-next-level" class="glow-button btn-primary btn-large">
             Sonraki Büyülü Bölüm ➔ 🐾
           </button>
@@ -315,6 +418,8 @@
 
   <!-- JavaScript Modülleri -->
   <script src="js/audio.js"></script>
+  <script src="js/wardrobe.js"></script>
+  <script src="js/human-renderer.js"></script>
   <script src="js/sprites.js"></script>
   <script src="js/physics.js"></script>
   <script src="js/entities.js"></script>

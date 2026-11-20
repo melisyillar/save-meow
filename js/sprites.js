@@ -496,6 +496,29 @@ const SpriteRenderer = {
 
   /**
    * =========================================================================
+   * HUMAN HERO – Delegates to High-Craft Layered Storybook HumanRenderer
+   * Supports full customization object (or legacy 'girl'/'boy' gender string)
+   * =========================================================================
+   */
+  drawHuman(ctx, x, y, width = 52, height = 74, state = 'idle', facingRight = true, animTimer = 0, isHurt = false, heroConfigOrGender = null) {
+    let config = heroConfigOrGender;
+    if (typeof heroConfigOrGender === 'string') {
+      config = {
+        gender: heroConfigOrGender,
+        hairStyle: heroConfigOrGender === 'boy' ? 'messy_short' : 'long_wavy',
+        top: heroConfigOrGender === 'boy' ? 'hoodie_mint' : 'blouse_blossom',
+        bottom: heroConfigOrGender === 'boy' ? 'shorts_cozy' : 'skirt_pleated',
+        shoes: heroConfigOrGender === 'boy' ? 'sneakers' : 'mary_janes',
+        hairAcc: heroConfigOrGender === 'boy' ? 'none' : 'flower_clip'
+      };
+    }
+    if (window.HumanRenderer) {
+      window.HumanRenderer.draw(ctx, x, y, width, height, state, facingRight, animTimer, isHurt, config);
+    }
+  },
+
+  /**
+   * =========================================================================
    * DESTINATION CAT GAZEBO / TOWER (Clear, Beautiful Destination!)
    * Shows the waiting partner cat welcoming the player with flowers & signpost
    * =========================================================================
@@ -553,13 +576,17 @@ const SpriteRenderer = {
     // 3. The Waiting Partner Cat Standing Proudly!
     const partnerX = 12;
     const partnerY = -42;
-    if (partnerCat === 'boncuk') {
+    if (partnerCat === 'both') {
+      // Hem Müezza hem Boncuk yan yana kurtarılmayı bekler!
+      this.drawMuezza(ctx, partnerX - 6, partnerY + 4, 44, 38, 'idle', true, animTimer, false);
+      this.drawBoncuk(ctx, partnerX + 22, partnerY + 4, 42, 36, 'idle', false, animTimer, false);
+    } else if (partnerCat === 'boncuk') {
       this.drawBoncuk(ctx, partnerX, partnerY, 52, 44, 'idle', false, animTimer, false);
     } else {
       this.drawMuezza(ctx, partnerX, partnerY, 54, 46, 'idle', false, animTimer, false);
     }
 
-    // 4. Floating Animated Calling Bubble: "BURADAYIM! 💕"
+    // 4. Floating Animated Calling Bubble
     const bubbleBob = Math.sin(animTimer * 4) * 4;
     const bubbleY = -62 + bubbleBob;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
@@ -570,6 +597,9 @@ const SpriteRenderer = {
     ctx.stroke();
 
     ctx.fillStyle = '#be185d';
+    ctx.font = 'bold 11px Quicksand, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(partnerCat === 'both' ? 'BİZİ KURTAR! 🐾' : 'BURADAYIM! 💕', 40, bubbleY + 2);
     ctx.font = 'bold 11px Quicksand, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('BURADAYIM! 💕', 40, bubbleY + 2);
@@ -1048,6 +1078,85 @@ const SpriteRenderer = {
       ctx.fillStyle = i % 2 === 0 ? '#facc15' : '#f472b6';
       ctx.font = '14px serif';
       ctx.fillText(i % 2 === 0 ? '✨' : '🌸', sx, sy);
+    }
+  },
+
+  drawReunionBothScene(ctx, width, height, animTimer = 0, heroConfigOrGender = null, heroName = 'Kahraman', reunionElapsed = 2.0) {
+    ctx.clearRect(0, 0, width, height);
+    const centerX = width / 2;
+    const groundY = height * 0.84;
+
+    // Warm sunlit fairy-tale meadow glow backdrop
+    const bgGrad = ctx.createRadialGradient(centerX, height * 0.45, 12, centerX, height * 0.55, width * 0.55);
+    bgGrad.addColorStop(0, 'rgba(255, 250, 240, 0.95)');
+    bgGrad.addColorStop(0.6, 'rgba(252, 231, 243, 0.55)');
+    bgGrad.addColorStop(1, 'rgba(254, 243, 199, 0.25)');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Soft pastel grass mound shadow
+    ctx.fillStyle = 'rgba(134, 239, 172, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(centerX, groundY + 4, width * 0.43, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Story animation progression: 0..1.1s cats eagerly run in -> >=1.1s warm embrace!
+    const progress = Math.min(1, Math.max(0, reunionElapsed / 1.1));
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const isHugging = progress >= 0.98;
+    const catState = isHugging ? 'idle' : 'run';
+    const heroState = isHugging ? 'hug' : 'celebrate';
+
+    // Cats converge smoothly from left & right toward the hero!
+    const muezzaStartX = centerX - 135;
+    const muezzaEndX = centerX - 66;
+    const boncukStartX = centerX + 86;
+    const boncukEndX = centerX + 18;
+
+    const muezzaX = muezzaStartX + (muezzaEndX - muezzaStartX) * ease;
+    const boncukX = boncukStartX + (boncukEndX - boncukStartX) * ease;
+    const cuddleBob = isHugging ? Math.sin(animTimer * 4.5) * 2.2 : 0;
+
+    // 1. Center: The Custom Human Child Hero (Celebrating -> Hugging!)
+    this.drawHuman(ctx, centerX - 34, groundY - 94, 68, 94, heroState, true, animTimer, false, heroConfigOrGender);
+
+    // 2. Left: Müezza snuggling up lovingly
+    this.drawMuezza(ctx, muezzaX, groundY - 46 + cuddleBob, 52, 44, catState, true, animTimer, false);
+
+    // 3. Right: Boncuk nuzzling warmly
+    this.drawBoncuk(ctx, boncukX, groundY - 44 - cuddleBob, 50, 42, catState, false, animTimer, false);
+
+    // 4. Rising love hearts & fairy sparkles during embrace
+    const heartScale = 1 + Math.sin(animTimer * 5.5) * 0.2;
+    ctx.save();
+    ctx.translate(centerX, groundY - 98);
+    ctx.scale(heartScale, heartScale);
+    ctx.font = '22px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('💖', 0, 0);
+    ctx.restore();
+
+    // Little purring hearts beside both cats
+    if (isHugging) {
+      const bob1 = Math.sin(animTimer * 4) * 4;
+      const bob2 = Math.cos(animTimer * 4) * 4;
+      ctx.font = '14px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('💕', muezzaX + 26, groundY - 52 + bob1);
+      ctx.fillText('💕', boncukX + 24, groundY - 52 + bob2);
+    }
+
+    // Fairy-tale floating petals & stars framing the trio cleanly
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2 + animTimer * 1.5;
+      const rx = 104 + Math.sin(animTimer * 3 + i) * 8;
+      const ry = 46 + Math.cos(animTimer * 2.5 + i) * 6;
+      const sx = centerX + Math.cos(angle) * rx;
+      const sy = groundY - 56 + Math.sin(angle) * ry;
+      ctx.fillStyle = i % 2 === 0 ? '#facc15' : '#ec4899';
+      ctx.font = '12px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(i % 3 === 0 ? '✨' : (i % 3 === 1 ? '🌸' : '🐾'), sx, sy);
     }
   }
 };

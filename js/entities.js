@@ -105,18 +105,25 @@ class ParticleSystem {
  * Clearly visible, animated and responsive!
  */
 class Player {
-  constructor(x, y, catType = 'muezza') {
+  constructor(x, y, catType = 'muezza', opts = {}) {
     this.x = x;
     this.y = y;
-    this.catType = catType; // 'boncuk' or 'muezza'
-    this.width = 46;        // Sized for easy visibility
-    this.height = 40;
+    this.catType = catType; // 'boncuk', 'muezza' or 'human'
+    this.heroConfig = opts.heroConfig || (catType === 'human' ? {
+      gender: opts.gender || 'girl',
+      name: opts.name || 'Kahraman'
+    } : null);
+    this.gender = (this.heroConfig && this.heroConfig.gender) || opts.gender || 'girl';
+    this.customName = (this.heroConfig && this.heroConfig.name) || opts.name || 'Kahraman';
+    this.width = catType === 'human' ? 34 : 44;   // Proportional child vs cat hitbox
+    this.height = catType === 'human' ? 58 : 42;
 
     this.vx = 0;
     this.vy = 0;
     this.facingRight = true;
     this.state = 'idle';
     this.animTimer = 0;
+    this.celebrateTimer = 0;
 
     // Movement & Jump physics states
     this.onGround = false;
@@ -189,6 +196,10 @@ class Player {
 
     if (this.landSquashTimer > 0) {
       this.landSquashTimer--;
+    }
+
+    if (this.celebrateTimer > 0) {
+      this.celebrateTimer--;
     }
 
     // Horizontal Input & Acceleration
@@ -269,15 +280,39 @@ class Player {
     this.resolveVerticalCollisions(level, particles, wasOnGround);
 
     // Animation State
-    if (!this.onGround) {
-      this.state = this.vy < 0 ? 'jump' : 'fall';
-    } else if (this.landSquashTimer > 0) {
-      this.state = 'land';
-    } else if (Math.abs(this.vx) > 0.4) {
-      this.state = 'run';
+    if (this.catType === 'human') {
+      if (this.state === 'hug') {
+        // Maintain hug pose during finale
+      } else if (this.isHurt && this.invulnTimer > 60) {
+        this.state = 'hurt';
+      } else if (this.celebrateTimer > 0 && this.onGround) {
+        this.state = 'celebrate';
+      } else if (!this.onGround) {
+        this.state = this.vy < 0 ? 'jump' : 'fall';
+      } else if (this.landSquashTimer > 0) {
+        this.state = 'land';
+      } else if (Math.abs(this.vx) > 2.6) {
+        this.state = 'run';
+      } else if (Math.abs(this.vx) > 0.25) {
+        this.state = 'walk';
+      } else {
+        this.state = 'idle';
+      }
     } else {
-      this.state = 'idle';
+      if (!this.onGround) {
+        this.state = this.vy < 0 ? 'jump' : 'fall';
+      } else if (this.landSquashTimer > 0) {
+        this.state = 'land';
+      } else if (Math.abs(this.vx) > 0.4) {
+        this.state = 'run';
+      } else {
+        this.state = 'idle';
+      }
     }
+  }
+
+  triggerCelebrate(frames = 38) {
+    this.celebrateTimer = frames;
   }
 
   resolveHorizontalCollisions(level) {
@@ -335,7 +370,24 @@ class Player {
   }
 
   draw(ctx) {
-    if (this.catType === 'boncuk') {
+    if (this.catType === 'human') {
+      const drawW = 58;
+      const drawH = 78;
+      const drawX = this.x + (this.width - drawW) / 2;
+      const drawY = this.y + this.height - drawH;
+      SpriteRenderer.drawHuman(
+        ctx,
+        drawX,
+        drawY,
+        drawW,
+        drawH,
+        this.state,
+        this.facingRight,
+        this.animTimer,
+        this.isHurt,
+        this.heroConfig
+      );
+    } else if (this.catType === 'boncuk') {
       SpriteRenderer.drawBoncuk(
         ctx,
         this.x - 4,

@@ -232,16 +232,20 @@ class LevelGenerator {
       collectibles.push(new Collectible(fc.x, fc.y, fc.type, false));
     }
 
-    // Character Special Collectible (Toilet Paper for Boncuk, Socks for Müezza)
-    const specialType = playerCat === 'boncuk' ? 'toilet_paper' : 'sock';
+    // Character Special Collectible (Toilet Paper for Boncuk, Socks for Müezza, Both for Human)
     const specialCoords = [
       { x: 620, y: 250 },
       { x: 1140, y: 230 },
       { x: 1640, y: 220 }
     ];
 
-    for (const sc of specialCoords) {
-      collectibles.push(new Collectible(sc.x, sc.y, specialType, true));
+    for (let i = 0; i < specialCoords.length; i++) {
+      const sc = specialCoords[i];
+      let type = playerCat === 'boncuk' ? 'toilet_paper' : 'sock';
+      if (playerCat === 'human') {
+        type = (i % 2 === 0) ? 'sock' : 'toilet_paper';
+      }
+      collectibles.push(new Collectible(sc.x, sc.y, type, true));
     }
 
     // Starting player position (Safely standing on platform 1)

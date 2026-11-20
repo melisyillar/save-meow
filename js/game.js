@@ -17,6 +17,7 @@ class Game {
     this.screenVictory = document.getElementById('screen-victory');
     this.screenGameover = document.getElementById('screen-gameover');
     this.screenFell = document.getElementById('screen-fell');
+    this.screenCustomHero = document.getElementById('screen-custom-hero');
     this.hud = document.getElementById('game-hud');
 
     // HUD Elements
@@ -38,7 +39,28 @@ class Game {
     ];
 
     // Character Selection (Default: Müezza on left)
-    this.selectedCat = 'muezza'; // 'muezza' or 'boncuk'
+    this.selectedCat = 'muezza'; // 'muezza', 'boncuk' or 'human'
+
+    // Persistent Custom Hero & Wardrobe Progression
+    this.wardrobeProgress = window.WardrobeSystem ? window.WardrobeSystem.loadProgress() : { highestLevelCompleted: 0, unlockedIds: [] };
+    this.heroConfig = window.WardrobeSystem ? window.WardrobeSystem.loadHeroConfig() : {
+      name: 'Maya', gender: 'girl', skinTone: 'peach', hairStyle: 'long_wavy',
+      hairStyleGirl: 'long_wavy', hairStyleBoy: 'messy_short', hairColor: 'brown',
+      eyeColor: 'brown', eyeShape: 'classic', eyebrowShape: 'soft',
+      top: 'blouse_blossom', bottom: 'skirt_pleated', outfit: 'none',
+      shoes: 'mary_janes', hairAcc: 'flower_clip', hat: 'none', glasses: 'none'
+    };
+    this.heroGender = this.heroConfig.gender || 'girl';
+    this.heroName = this.heroConfig.name || 'Maya';
+
+    // Studio UI State
+    this.studioTab = 'hair';
+    this.previewPose = 'idle';
+    this.previewFacingRight = true;
+    this.studioReturnScreen = 'select';
+    this.studioToastTimer = null;
+    this.victoryElapsed = 0;
+
     this.currentLevelNum = 1;
     this.score = 0;
     this.totalTreatsInLevel = 0;
@@ -72,8 +94,24 @@ class Game {
     };
 
     this.victoryCanvas = document.getElementById('victory-canvas');
+    this.heroLivePreviewCanvas = document.getElementById('hero-live-preview');
+    this.cardCanvasHuman = document.getElementById('card-canvas-human');
+    this.inputHeroName = document.getElementById('input-hero-name');
+    this.studioTabContent = document.getElementById('studio-tab-content');
+    this.studioToast = document.getElementById('studio-toast');
+    this.studioProgressPill = document.getElementById('studio-progress-pill');
+    this.studioNextRewardHint = document.getElementById('studio-next-reward-hint');
+    this.victoryRewardBanner = document.getElementById('victory-reward-banner');
+    this.victoryRewardItems = document.getElementById('victory-reward-items');
+    this.btnVictoryWardrobe = document.getElementById('btn-victory-wardrobe');
+    this.btnPauseWardrobe = document.getElementById('btn-pause-wardrobe');
+
+    if (this.inputHeroName) {
+      this.inputHeroName.value = this.heroConfig.name || 'Maya';
+    }
 
     this.initEvents();
+    this.renderStudioControls();
     this.startLoop();
   }
 
@@ -90,6 +128,10 @@ class Game {
 
     // Keyboard Listeners (Left, Right, Jump, Sound, Pause)
     window.addEventListener('keydown', (e) => {
+      // Never hijack typing inside character name input!
+      const tag = document.activeElement ? document.activeElement.tagName : '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
       try {
         if (window.soundEngine) window.soundEngine.ensureContext();
       } catch (err) {}
@@ -175,14 +217,78 @@ class Game {
       this.selectCat('boncuk');
     });
 
+    on('card-human', 'click', () => {
+      this.selectCat('human');
+    });
+
     on('btn-back-to-start', 'click', () => {
       this.showScreen('start');
     });
 
-    // Start Level Button
+    // Start Level Button in Character Select
     on('btn-start-game', 'click', () => {
-      this.startLevel(1);
+      this.handleMainStartClick();
     });
+
+    // Custom Hero Studio Controls
+    on('opt-hero-girl', 'click', () => {
+      this.selectHeroGender('girl');
+    });
+
+    on('opt-hero-boy', 'click', () => {
+      this.selectHeroGender('boy');
+    });
+
+    on('btn-back-to-char-select', 'click', () => {
+      this.handleBackFromStudio();
+    });
+
+    on('btn-start-hero-game', 'click', () => {
+      this.startHeroGame();
+    });
+
+    on('btn-preview-flip', 'click', () => {
+      this.previewFacingRight = !this.previewFacingRight;
+    });
+
+    on('btn-hero-randomize', 'click', () => {
+      this.randomizeHero();
+    });
+
+    if (this.inputHeroName) {
+      this.inputHeroName.addEventListener('input', () => {
+        const val = this.inputHeroName.value.trim();
+        this.heroConfig.name = val || (this.heroConfig.gender === 'girl' ? 'Maya' : 'Can');
+        this.heroName = this.heroConfig.name;
+        if (window.WardrobeSystem) window.WardrobeSystem.saveHeroConfig(this.heroConfig);
+        if (this.player && this.player.catType === 'human') {
+          this.player.customName = this.heroName;
+          if (this.player.heroConfig) this.player.heroConfig.name = this.heroName;
+        }
+      });
+    }
+
+    // Studio Category Tabs
+    const tabsEl = document.getElementById('studio-tabs');
+    if (tabsEl) {
+      tabsEl.querySelectorAll('.studio-tab').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setStudioTab(btn.dataset.tab);
+        });
+      });
+    }
+
+    // Studio Pose Preview Bar
+    const poseBar = document.getElementById('preview-pose-bar');
+    if (poseBar) {
+      poseBar.querySelectorAll('.pose-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setPreviewPose(btn.dataset.pose);
+        });
+      });
+    }
 
     // HUD buttons
     on('btn-sound-toggle', 'click', () => this.toggleSound());
@@ -190,6 +296,7 @@ class Game {
 
     // Pause Screen Buttons
     on('btn-resume', 'click', () => this.resumeGame());
+    on('btn-pause-wardrobe', 'click', () => this.openStudio('paused'));
     on('btn-restart-level', 'click', () => {
       this.startLevel(this.currentLevelNum);
     });
@@ -198,6 +305,7 @@ class Game {
     });
 
     // Victory Screen Buttons
+    on('btn-victory-wardrobe', 'click', () => this.openStudio('victory'));
     on('btn-next-level', 'click', () => {
       this.startLevel(this.currentLevelNum + 1);
     });
@@ -222,21 +330,385 @@ class Game {
     this.selectedCat = catName;
     const cardMuezza = document.getElementById('card-muezza');
     const cardBoncuk = document.getElementById('card-boncuk');
+    const cardHuman = document.getElementById('card-human');
     const selectedNameSpan = document.getElementById('selected-cat-name');
+    const btnStartGame = document.getElementById('btn-start-game');
+
+    if (cardMuezza) cardMuezza.classList.remove('selected');
+    if (cardBoncuk) cardBoncuk.classList.remove('selected');
+    if (cardHuman) cardHuman.classList.remove('selected');
 
     if (catName === 'muezza') {
       if (cardMuezza) cardMuezza.classList.add('selected');
-      if (cardBoncuk) cardBoncuk.classList.remove('selected');
       if (selectedNameSpan) selectedNameSpan.textContent = 'Müezza';
-    } else {
+      if (btnStartGame) btnStartGame.innerHTML = '<span id="selected-cat-name">Müezza</span> ile Maceraya Atıl! 🚀';
+      try {
+        if (window.soundEngine) window.soundEngine.playMeow('muezza');
+      } catch (err) {}
+    } else if (catName === 'boncuk') {
       if (cardBoncuk) cardBoncuk.classList.add('selected');
-      if (cardMuezza) cardMuezza.classList.remove('selected');
       if (selectedNameSpan) selectedNameSpan.textContent = 'Boncuk';
+      if (btnStartGame) btnStartGame.innerHTML = '<span id="selected-cat-name">Boncuk</span> ile Maceraya Atıl! 🚀';
+      try {
+        if (window.soundEngine) window.soundEngine.playMeow('boncuk');
+      } catch (err) {}
+    } else if (catName === 'human') {
+      if (cardHuman) cardHuman.classList.add('selected');
+      if (btnStartGame) btnStartGame.innerHTML = 'Kahramanını Oluştur! 🎨 ➔';
+      try {
+        if (window.soundEngine) {
+          window.soundEngine.playMeow('boncuk');
+          setTimeout(() => { if (window.soundEngine) window.soundEngine.playMeow('muezza'); }, 180);
+        }
+      } catch (err) {}
+    }
+  }
+
+  handleMainStartClick() {
+    if (this.selectedCat === 'human') {
+      this.openStudio('select');
+    } else {
+      this.startLevel(1);
+    }
+  }
+
+  openStudio(returnScreen = 'select') {
+    this.studioReturnScreen = returnScreen;
+    if (window.WardrobeSystem) {
+      this.wardrobeProgress = window.WardrobeSystem.loadProgress();
+      this.heroConfig = window.WardrobeSystem.sanitizeConfig(this.heroConfig, this.wardrobeProgress);
+    }
+    this.heroGender = this.heroConfig.gender;
+    this.heroName = this.heroConfig.name;
+
+    // Sync gender pill UI
+    const optGirl = document.getElementById('opt-hero-girl');
+    const optBoy = document.getElementById('opt-hero-boy');
+    if (optGirl) optGirl.classList.toggle('selected', this.heroConfig.gender === 'girl');
+    if (optBoy) optBoy.classList.toggle('selected', this.heroConfig.gender === 'boy');
+
+    if (this.inputHeroName) {
+      this.inputHeroName.value = this.heroConfig.name || (this.heroConfig.gender === 'girl' ? 'Maya' : 'Can');
     }
 
+    const startBtn = document.getElementById('btn-start-hero-game');
+    if (startBtn) {
+      if (returnScreen === 'paused') startBtn.textContent = 'Kaydet & Devam Et! ▶';
+      else if (returnScreen === 'victory') startBtn.textContent = 'Sonraki Bölüme Başla! 🚀🐾';
+      else startBtn.textContent = 'Maceraya Başla! 🚀🐾';
+    }
+
+    this.renderStudioControls();
+    this.showScreen('custom-hero');
+  }
+
+  handleBackFromStudio() {
+    if (this.studioReturnScreen === 'paused') {
+      this.showScreen('paused');
+    } else if (this.studioReturnScreen === 'victory') {
+      this.showScreen('victory');
+    } else {
+      this.showScreen('select');
+    }
+  }
+
+  selectHeroGender(gender) {
+    if (gender !== 'girl' && gender !== 'boy') return;
+    this.heroGender = gender;
+    this.heroConfig.gender = gender;
+
+    // Switch to saved hairstyle for this gender (so girl & boy each have distinct hair!)
+    if (window.WardrobeSystem) {
+      if (gender === 'girl') {
+        this.heroConfig.hairStyle = this.heroConfig.hairStyleGirl || 'long_wavy';
+      } else {
+        this.heroConfig.hairStyle = this.heroConfig.hairStyleBoy || 'messy_short';
+      }
+      this.heroConfig = window.WardrobeSystem.sanitizeConfig(this.heroConfig, this.wardrobeProgress);
+    }
+
+    const optGirl = document.getElementById('opt-hero-girl');
+    const optBoy = document.getElementById('opt-hero-boy');
+    if (optGirl) optGirl.classList.toggle('selected', gender === 'girl');
+    if (optBoy) optBoy.classList.toggle('selected', gender === 'boy');
+
+    if (this.inputHeroName) {
+      const cur = this.inputHeroName.value.trim();
+      if (gender === 'girl' && (!cur || cur === 'Can' || cur === 'Kahraman')) {
+        this.inputHeroName.value = 'Maya';
+        this.heroConfig.name = 'Maya';
+      } else if (gender === 'boy' && (!cur || cur === 'Maya' || cur === 'Kahraman')) {
+        this.inputHeroName.value = 'Can';
+        this.heroConfig.name = 'Can';
+      }
+    }
+    this.heroName = this.heroConfig.name;
+
+    if (window.WardrobeSystem) window.WardrobeSystem.saveHeroConfig(this.heroConfig);
+    this.syncLivePlayerHeroConfig();
+    this.renderStudioControls();
+
     try {
-      if (window.soundEngine) window.soundEngine.playMeow(catName);
+      if (window.soundEngine) window.soundEngine.playEat();
     } catch (err) {}
+  }
+
+  setStudioTab(tabName) {
+    this.studioTab = tabName || 'hair';
+    const tabsEl = document.getElementById('studio-tabs');
+    if (tabsEl) {
+      tabsEl.querySelectorAll('.studio-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === this.studioTab);
+      });
+    }
+    this.renderStudioControls();
+  }
+
+  setPreviewPose(poseName) {
+    this.previewPose = poseName || 'idle';
+    const poseBar = document.getElementById('preview-pose-bar');
+    if (poseBar) {
+      poseBar.querySelectorAll('.pose-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.pose === this.previewPose);
+      });
+    }
+  }
+
+  showStudioToast(message) {
+    if (!this.studioToast) return;
+    this.studioToast.textContent = message;
+    this.studioToast.classList.remove('hidden');
+    if (this.studioToastTimer) clearTimeout(this.studioToastTimer);
+    this.studioToastTimer = setTimeout(() => {
+      if (this.studioToast) this.studioToast.classList.add('hidden');
+    }, 2400);
+  }
+
+  updateHeroProp(key, value) {
+    const WS = window.WardrobeSystem;
+    const unlockableKeys = ['top', 'bottom', 'outfit', 'shoes', 'hairAcc', 'hat', 'glasses'];
+    if (WS && unlockableKeys.includes(key)) {
+      if (!WS.isItemUnlocked(value, this.wardrobeProgress)) {
+        const item = WS.ALL_WARDROBE_ITEMS.find(i => i.id === value);
+        const lvl = item ? item.unlockLevel : '?';
+        this.showStudioToast(`🔒 "${item ? item.name : ''}" Bölüm ${lvl} tamamlandığında açılır!`);
+        return;
+      }
+    }
+
+    this.heroConfig[key] = value;
+
+    // Remember hairstyle per gender
+    if (key === 'hairStyle') {
+      if (this.heroConfig.gender === 'girl') this.heroConfig.hairStyleGirl = value;
+      else this.heroConfig.hairStyleBoy = value;
+    }
+
+    // If choosing a separate top or bottom while wearing a full special outfit, switch to mix-and-match automatically!
+    if ((key === 'top' || key === 'bottom') && this.heroConfig.outfit !== 'none') {
+      this.heroConfig.outfit = 'none';
+    }
+
+    if (WS) WS.saveHeroConfig(this.heroConfig);
+    this.syncLivePlayerHeroConfig();
+    this.renderStudioControls();
+
+    try {
+      if (window.soundEngine) window.soundEngine.playEat();
+    } catch (err) {}
+  }
+
+  syncLivePlayerHeroConfig() {
+    if (this.player && this.player.catType === 'human') {
+      this.player.heroConfig = { ...this.heroConfig };
+      this.player.gender = this.heroConfig.gender;
+      this.player.customName = this.heroConfig.name;
+    }
+  }
+
+  randomizeHero() {
+    if (!window.WardrobeSystem) return;
+    this.heroConfig = window.WardrobeSystem.randomizeConfig(this.heroConfig, this.wardrobeProgress);
+    this.heroGender = this.heroConfig.gender;
+    this.heroName = this.heroConfig.name;
+    window.WardrobeSystem.saveHeroConfig(this.heroConfig);
+    this.syncLivePlayerHeroConfig();
+    this.renderStudioControls();
+    try {
+      if (window.soundEngine) window.soundEngine.playToyCollect();
+    } catch (err) {}
+  }
+
+  renderStudioControls() {
+    const WS = window.WardrobeSystem;
+    if (!WS || !this.studioTabContent) return;
+
+    // Update reward progress pill & footer hint
+    const stats = WS.getUnlockStats(this.wardrobeProgress);
+    if (this.studioProgressPill) {
+      this.studioProgressPill.textContent = `🎁 Ödüller: ${stats.unlockedRewards} / ${stats.totalRewards}`;
+    }
+    if (this.studioNextRewardHint) {
+      if (stats.nextMilestoneLevel && stats.nextRewardItem) {
+        this.studioNextRewardHint.textContent = `🎁 Sonraki ödül: Bölüm ${stats.nextMilestoneLevel} (${stats.nextRewardItem.name})`;
+      } else {
+        this.studioNextRewardHint.textContent = '🏆 Tüm dolap ödülleri açıldı!';
+      }
+    }
+
+    const container = this.studioTabContent;
+    container.innerHTML = '';
+
+    const addSwatchSection = (title, items, propKey) => {
+      const sec = document.createElement('div');
+      const curItem = items.find(i => i.id === this.heroConfig[propKey]);
+      sec.innerHTML = `<div class="opt-section-label"><span>${title}</span><span class="opt-section-sub">${curItem ? curItem.name : ''}</span></div>`;
+      const grid = document.createElement('div');
+      grid.className = 'swatch-grid';
+
+      items.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'color-swatch-btn' + (this.heroConfig[propKey] === item.id ? ' selected' : '');
+        btn.style.background = item.swatch;
+        btn.title = item.name;
+        btn.dataset.prop = propKey;
+        btn.dataset.value = item.id;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.updateHeroProp(propKey, item.id);
+        });
+        grid.appendChild(btn);
+      });
+      sec.appendChild(grid);
+      container.appendChild(sec);
+    };
+
+    const addItemGridSection = (title, items, propKey, compact = false, showMilestone = false) => {
+      const sec = document.createElement('div');
+      const subText = (propKey === 'top' || propKey === 'bottom') && this.heroConfig.outfit !== 'none'
+        ? 'Özel kostüm aktif (seçince serbest kombine geçer)'
+        : '';
+      sec.innerHTML = `<div class="opt-section-label"><span>${title}</span><span class="opt-section-sub">${subText}</span></div>`;
+      const grid = document.createElement('div');
+      grid.className = 'item-options-grid' + (compact ? ' compact' : '');
+
+      items.forEach(item => {
+        const unlocked = WS.isItemUnlocked(item.id, this.wardrobeProgress);
+        const isSelected = this.heroConfig[propKey] === item.id && unlocked;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'item-opt-btn' + (isSelected ? ' selected' : '') + (!unlocked ? ' locked' : '');
+        btn.dataset.prop = propKey;
+        btn.dataset.value = item.id;
+        btn.title = item.desc || item.name;
+
+        let badgeHtml = '';
+        if (!unlocked) {
+          badgeHtml = `<span class="item-lock-tag">🔒 Bölüm ${item.unlockLevel}</span>`;
+        } else if (showMilestone && item.unlockLevel > 0) {
+          badgeHtml = `<span class="item-milestone-tag">✨ Bölüm ${item.unlockLevel}</span>`;
+        }
+
+        btn.innerHTML = `<span class="item-opt-icon">${unlocked ? item.icon : '🔒'}</span><span class="item-opt-name">${item.name}</span>${badgeHtml}`;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.updateHeroProp(propKey, item.id);
+        });
+        grid.appendChild(btn);
+      });
+      sec.appendChild(grid);
+      container.appendChild(sec);
+    };
+
+    if (this.studioTab === 'hair') {
+      const hairList = this.heroConfig.gender === 'girl' ? WS.GIRL_HAIRSTYLES : WS.BOY_HAIRSTYLES;
+      addItemGridSection(
+        this.heroConfig.gender === 'girl' ? 'Kız Saç Modelleri (9 Model)' : 'Erkek Saç Modelleri (8 Model)',
+        hairList,
+        'hairStyle',
+        true
+      );
+      addSwatchSection('Saç Rengi (11 Renk)', WS.HAIR_COLORS, 'hairColor');
+    } else if (this.studioTab === 'face') {
+      addSwatchSection('Ten Tonu', WS.SKIN_TONES, 'skinTone');
+      addSwatchSection('Göz Rengi (6 Renk)', WS.EYE_COLORS, 'eyeColor');
+      addItemGridSection('Göz Biçimi', WS.EYE_SHAPES, 'eyeShape', true);
+      addItemGridSection('Kaş Biçimi', WS.EYEBROW_SHAPES, 'eyebrowShape', true);
+    } else if (this.studioTab === 'clothes') {
+      addItemGridSection('Üst Kıyafetler', WS.TOPS, 'top', false, true);
+      addItemGridSection('Alt Kıyafetler', WS.BOTTOMS, 'bottom', false, true);
+      addItemGridSection('Ayakkabılar', WS.SHOES, 'shoes', true, true);
+    } else if (this.studioTab === 'accessories') {
+      addItemGridSection('Saç Aksesuarları', WS.HAIR_ACCESSORIES, 'hairAcc', true, true);
+      addItemGridSection('Şapka & Taç', WS.HATS, 'hat', true, true);
+      addItemGridSection('Gözlükler', WS.GLASSES, 'glasses', true, true);
+    } else if (this.studioTab === 'wardrobe') {
+      // Progress Roadmap Card
+      const pct = stats.totalRewards > 0 ? Math.round((stats.unlockedRewards / stats.totalRewards) * 100) : 100;
+      const road = document.createElement('div');
+      road.className = 'wardrobe-roadmap-box';
+      road.innerHTML = `
+        <div><strong>🏆 Tamamlanan En Yüksek Bölüm: ${stats.highestLevel}</strong> &nbsp;•&nbsp; Açılan Ödüller: <strong>${stats.unlockedRewards}/${stats.totalRewards}</strong></div>
+        <div style="font-size:10.5px;margin-top:3px;color:#8c634d;">Her 3 bölümde yeni kıyafet/aksesuar, 5., 10., 15. ve 20. bölümlerde özel masal kostümleri açılır!</div>
+        <div class="wardrobe-progress-bar"><div class="wardrobe-progress-fill" style="width:${pct}%"></div></div>
+      `;
+      container.appendChild(road);
+
+      // Special Milestone Outfits (5, 10, 15, 20)
+      addItemGridSection('👑 Özel Bölüm Kostümleri (5, 10, 15, 20. Bölüm)', WS.SPECIAL_OUTFITS, 'outfit', false, true);
+
+      // All Rewardable Items Roadmap (sorted by unlock level)
+      const rewardSec = document.createElement('div');
+      rewardSec.innerHTML = `<div class="opt-section-label"><span>🎁 Tüm Bölüm Ödülleri</span><span class="opt-section-sub">Açılanlara tıklayıp giyebilirsin</span></div>`;
+      const rewardGrid = document.createElement('div');
+      rewardGrid.className = 'item-options-grid';
+
+      const rewards = WS.ALL_WARDROBE_ITEMS
+        .filter(i => i.unlockLevel > 0)
+        .sort((a, b) => a.unlockLevel - b.unlockLevel);
+
+      rewards.forEach(item => {
+        const unlocked = WS.isItemUnlocked(item.id, this.wardrobeProgress);
+        const isEquipped = unlocked && this.heroConfig[item.category] === item.id;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'item-opt-btn' + (isEquipped ? ' selected' : '') + (!unlocked ? ' locked' : '');
+        btn.dataset.prop = item.category;
+        btn.dataset.value = item.id;
+        btn.title = item.desc || item.name;
+        btn.innerHTML = `
+          <span class="item-opt-icon">${unlocked ? item.icon : '🔒'}</span>
+          <span class="item-opt-name">${item.name}</span>
+          <span class="${unlocked ? 'item-milestone-tag' : 'item-lock-tag'}">${unlocked ? '✓ Açık' : '🔒 Bölüm ' + item.unlockLevel}</span>
+        `;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.updateHeroProp(item.category, item.id);
+        });
+        rewardGrid.appendChild(btn);
+      });
+      rewardSec.appendChild(rewardGrid);
+      container.appendChild(rewardSec);
+    }
+  }
+
+  startHeroGame() {
+    const val = this.inputHeroName ? this.inputHeroName.value.trim() : '';
+    this.heroConfig.name = val || (this.heroConfig.gender === 'girl' ? 'Maya' : 'Can');
+    this.heroName = this.heroConfig.name;
+    this.heroGender = this.heroConfig.gender;
+    if (window.WardrobeSystem) window.WardrobeSystem.saveHeroConfig(this.heroConfig);
+    this.syncLivePlayerHeroConfig();
+
+    this.selectedCat = 'human';
+    if (this.studioReturnScreen === 'paused') {
+      this.showScreen('playing');
+    } else if (this.studioReturnScreen === 'victory') {
+      this.startLevel(this.currentLevelNum + 1);
+    } else {
+      this.startLevel(1);
+    }
   }
 
   showScreen(screenName) {
@@ -245,6 +717,7 @@ class Game {
     const screens = [
       this.screenStart,
       this.screenCharacter,
+      this.screenCustomHero,
       this.screenHowto,
       this.screenPause,
       this.screenVictory,
@@ -273,6 +746,7 @@ class Game {
     let target = null;
     if (screenName === 'start') target = this.screenStart;
     else if (screenName === 'select') target = this.screenCharacter;
+    else if (screenName === 'custom-hero') target = this.screenCustomHero;
     else if (screenName === 'howto') target = this.screenHowto;
     else if (screenName === 'paused') target = this.screenPause;
     else if (screenName === 'victory') target = this.screenVictory;
@@ -298,6 +772,9 @@ class Game {
 
   pauseGame() {
     if (this.gameState === 'playing') {
+      if (this.btnPauseWardrobe) {
+        this.btnPauseWardrobe.classList.toggle('hidden', this.selectedCat !== 'human');
+      }
       this.showScreen('paused');
     }
   }
@@ -312,10 +789,21 @@ class Game {
     this.currentLevelNum = levelNum;
     this.level = LevelGenerator.generate(levelNum, this.selectedCat);
 
-    // Selected cat is controlled; unselected cat waits in the Destination Gazebo
-    const partnerCat = this.selectedCat === 'boncuk' ? 'muezza' : 'boncuk';
-    this.player = new Player(this.level.playerSpawn.x, this.level.playerSpawn.y, this.selectedCat);
-    this.destination = new Destination(this.level.partnerSpawn.x, this.level.partnerSpawn.y, partnerCat);
+    // Selected cat or human hero is controlled
+    if (this.selectedCat === 'human') {
+      const spawnY = this.level.playerSpawn.y - 16; // Human hitbox height 58 rests cleanly on platform
+      this.player = new Player(this.level.playerSpawn.x, spawnY, 'human', {
+        heroConfig: { ...this.heroConfig },
+        gender: this.heroConfig.gender,
+        name: this.heroConfig.name
+      });
+      // Both Boncuk & Müezza wait together in the Destination Gazebo!
+      this.destination = new Destination(this.level.partnerSpawn.x, this.level.partnerSpawn.y, 'both');
+    } else {
+      const partnerCat = this.selectedCat === 'boncuk' ? 'muezza' : 'boncuk';
+      this.player = new Player(this.level.playerSpawn.x, this.level.playerSpawn.y, this.selectedCat);
+      this.destination = new Destination(this.level.partnerSpawn.x, this.level.partnerSpawn.y, partnerCat);
+    }
 
     this.totalTreatsInLevel = this.level.collectibles.length;
     this.collectedTreatsInLevel = 0;
@@ -331,8 +819,14 @@ class Game {
     // Update HUD
     if (this.hudLevelNum) this.hudLevelNum.textContent = `Bölüm ${levelNum}`;
     if (this.hudLevelName) this.hudLevelName.textContent = this.level.theme.name;
-    if (this.hudToyIcon) this.hudToyIcon.textContent = this.selectedCat === 'boncuk' ? '🧻' : '🧦';
-    if (this.trackerText) this.trackerText.textContent = `${partnerCat === 'boncuk' ? 'Boncuk' : 'Müezza'}'a Koş!`;
+    if (this.hudToyIcon) {
+      if (this.selectedCat === 'human') this.hudToyIcon.textContent = '🐾';
+      else this.hudToyIcon.textContent = this.selectedCat === 'boncuk' ? '🧻' : '🧦';
+    }
+    if (this.trackerText) {
+      if (this.selectedCat === 'human') this.trackerText.textContent = `${this.heroConfig.name}: Kedileri Kurtar!`;
+      else this.trackerText.textContent = `${this.selectedCat === 'boncuk' ? 'Müezza' : 'Boncuk'}'a Koş!`;
+    }
     this.updateHUD();
 
     this.showScreen('playing');
@@ -341,7 +835,11 @@ class Game {
       if (window.soundEngine) {
         window.soundEngine.ensureContext();
         window.soundEngine.startBGM();
-        window.soundEngine.playMeow(this.selectedCat);
+        if (this.selectedCat === 'human') {
+          window.soundEngine.playMeow('boncuk');
+        } else {
+          window.soundEngine.playMeow(this.selectedCat);
+        }
       }
     } catch (err) {}
   }
@@ -352,9 +850,19 @@ class Game {
     this.score = this.levelStartScore;
     this.level = LevelGenerator.generate(this.currentLevelNum, this.selectedCat);
 
-    const partnerCat = this.selectedCat === 'boncuk' ? 'muezza' : 'boncuk';
-    this.player = new Player(this.level.playerSpawn.x, this.level.playerSpawn.y, this.selectedCat);
-    this.destination = new Destination(this.level.partnerSpawn.x, this.level.partnerSpawn.y, partnerCat);
+    if (this.selectedCat === 'human') {
+      const spawnY = this.level.playerSpawn.y - 16;
+      this.player = new Player(this.level.playerSpawn.x, spawnY, 'human', {
+        heroConfig: { ...this.heroConfig },
+        gender: this.heroConfig.gender,
+        name: this.heroConfig.name
+      });
+      this.destination = new Destination(this.level.partnerSpawn.x, this.level.partnerSpawn.y, 'both');
+    } else {
+      const partnerCat = this.selectedCat === 'boncuk' ? 'muezza' : 'boncuk';
+      this.player = new Player(this.level.playerSpawn.x, this.level.playerSpawn.y, this.selectedCat);
+      this.destination = new Destination(this.level.partnerSpawn.x, this.level.partnerSpawn.y, partnerCat);
+    }
 
     this.player.lives = livesLeft; // Restore remaining lives (1 was already deducted in triggerFell)
     this.totalTreatsInLevel = this.level.collectibles.length;
@@ -402,18 +910,65 @@ class Game {
 
   triggerVictory() {
     this.score += 500;
+    this.victoryElapsed = 0;
+
+    if (this.player && this.player.catType === 'human') {
+      this.player.state = 'hug';
+    }
+
+    // Check & permanently unlock level wardrobe rewards!
+    let newlyUnlocked = [];
+    if (window.WardrobeSystem) {
+      const res = window.WardrobeSystem.checkAndUnlockForLevel(this.currentLevelNum);
+      this.wardrobeProgress = res.progress;
+      newlyUnlocked = res.newlyUnlocked || [];
+    }
+
     try {
-      if (window.soundEngine) window.soundEngine.playVictory();
+      if (window.soundEngine) {
+        window.soundEngine.playVictory();
+        if (newlyUnlocked.length > 0) {
+          setTimeout(() => {
+            try { if (window.soundEngine) window.soundEngine.playToyCollect(); } catch (e) {}
+          }, 380);
+        }
+      }
     } catch (err) {}
 
     const vLvl = document.getElementById('vic-level-num');
     const vTrt = document.getElementById('vic-treats');
     const vScr = document.getElementById('vic-score');
     const vStr = document.getElementById('vic-stars');
+    const vMsg = document.getElementById('victory-message');
 
     if (vLvl) vLvl.textContent = `Bölüm ${this.currentLevelNum}`;
     if (vTrt) vTrt.textContent = `${this.collectedTreatsInLevel} / ${this.totalTreatsInLevel}`;
     if (vScr) vScr.textContent = this.score;
+
+    if (vMsg) {
+      if (this.selectedCat === 'human') {
+        vMsg.textContent = `${this.heroConfig.name}, Boncuk ve Müezza'yı başarıyla kurtardı! İki sevimli dost koşa koşa gelip sıcacık sarıldı! 💖🐾`;
+      } else {
+        vMsg.textContent = "Boncuk ve Müezza burun buruna değdi ve sıcacık kucaklaştı!";
+      }
+    }
+
+    // Show celebratory reward banner if new wardrobe items unlocked!
+    if (this.victoryRewardBanner && this.victoryRewardItems) {
+      if (newlyUnlocked.length > 0) {
+        this.victoryRewardItems.innerHTML = newlyUnlocked
+          .map(item => `<span class="reward-chip">${item.icon} ${item.name}</span>`)
+          .join('');
+        this.victoryRewardBanner.classList.remove('hidden');
+      } else {
+        this.victoryRewardBanner.classList.add('hidden');
+      }
+    }
+
+    if (this.btnVictoryWardrobe) {
+      const showBtn = this.selectedCat === 'human' || newlyUnlocked.length > 0;
+      this.btnVictoryWardrobe.classList.toggle('hidden', !showBtn);
+    }
 
     const percent = this.totalTreatsInLevel > 0 ? (this.collectedTreatsInLevel / this.totalTreatsInLevel) : 1;
     const stars = percent > 0.8 ? '⭐⭐⭐' : (percent > 0.4 ? '⭐⭐' : '⭐');
@@ -455,15 +1010,18 @@ class Game {
       return;
     }
 
-    const catName = this.selectedCat === 'muezza' ? 'Müezza' : 'Boncuk';
+    const charName = this.selectedCat === 'human' ? this.heroName : (this.selectedCat === 'muezza' ? 'Müezza' : 'Boncuk');
     const fellMsg = document.getElementById('fell-message');
-    if (fellMsg) fellMsg.textContent = `Hay aksi! ${catName} düştü! 😿`;
+    if (fellMsg) fellMsg.textContent = `Hay aksi! ${charName} düştü! 😿`;
 
     this.showScreen('fell');
   }
 
   update(delta) {
     this.animTimer += 0.016;
+    if (this.gameState === 'victory') {
+      this.victoryElapsed += 0.016;
+    }
 
     if (this.gameState === 'playing' && this.player && this.level) {
       // Update Player
@@ -509,6 +1067,9 @@ class Game {
 
           if (c.isSpecial) {
             this.score += 150;
+            if (this.player.catType === 'human' && typeof this.player.triggerCelebrate === 'function') {
+              this.player.triggerCelebrate(36);
+            }
             try {
               if (window.soundEngine) window.soundEngine.playToyCollect();
             } catch (err) {}
@@ -650,10 +1211,70 @@ class Game {
   }
 
   renderPreviews() {
+    // 1. Zafer Ekranı Kucaklaşma Sahnesi (Canlı animasyonlu final!)
     if (this.victoryCanvas && this.gameState === 'victory') {
       const vctx = this.victoryCanvas.getContext('2d');
       if (vctx) {
-        SpriteRenderer.drawReunionScene(vctx, 280, 140, this.animTimer);
+        const vw = this.victoryCanvas.width || 320;
+        const vh = this.victoryCanvas.height || 145;
+        if (this.selectedCat === 'human') {
+          SpriteRenderer.drawReunionBothScene(vctx, vw, vh, this.animTimer, this.heroConfig, this.heroConfig.name, this.victoryElapsed);
+        } else {
+          SpriteRenderer.drawReunionScene(vctx, vw, vh, this.animTimer);
+        }
+      }
+    }
+
+    // 2. Karakter Seçim Ekranındaki 3. Kart Önizlemesi ("Sen Kurtar!" Kartı)
+    if (this.cardCanvasHuman && (this.gameState === 'select' || this.gameState === 'start')) {
+      const hctx = this.cardCanvasHuman.getContext('2d');
+      if (hctx) {
+        hctx.clearRect(0, 0, 140, 124);
+        const bgGrad = hctx.createLinearGradient(0, 0, 0, 124);
+        bgGrad.addColorStop(0, '#fff9f2');
+        bgGrad.addColorStop(0.65, '#fceef5');
+        bgGrad.addColorStop(1, '#f3e8fa');
+        hctx.fillStyle = bgGrad;
+        hctx.fillRect(0, 0, 140, 124);
+
+        // Yumuşak çayır gölgesi
+        hctx.fillStyle = 'rgba(134, 239, 172, 0.35)';
+        hctx.beginPath();
+        hctx.ellipse(70, 112, 58, 9, 0, 0, Math.PI * 2);
+        hctx.fill();
+
+        // Kız ve Erkek çocuk yeni masalsı çizimle yan yana!
+        SpriteRenderer.drawHuman(hctx, 10, 26, 56, 86, 'idle', true, this.animTimer, false, 'girl');
+        SpriteRenderer.drawHuman(hctx, 74, 26, 56, 86, 'idle', false, this.animTimer, false, 'boy');
+
+        // Aralarında parlayan kalp
+        const pulse = 1 + Math.sin(this.animTimer * 4) * 0.16;
+        hctx.save();
+        hctx.translate(70, 22);
+        hctx.scale(pulse, pulse);
+        hctx.font = '15px serif';
+        hctx.textAlign = 'center';
+        hctx.fillText('💖', 0, 0);
+        hctx.restore();
+      }
+    }
+
+    // 3. Gelişmiş Kahraman Stüdyosu Büyük Canlı Önizleme (2x HiDPI crisp!)
+    if (this.gameState === 'custom-hero' && this.heroLivePreviewCanvas && window.HumanRenderer) {
+      const pctx = this.heroLivePreviewCanvas.getContext('2d');
+      if (pctx) {
+        pctx.save();
+        pctx.setTransform(2, 0, 0, 2, 0, 0);
+        window.HumanRenderer.drawStudioPreview(
+          pctx,
+          230,
+          260,
+          this.heroConfig,
+          this.previewPose,
+          this.previewFacingRight,
+          this.animTimer
+        );
+        pctx.restore();
       }
     }
   }
