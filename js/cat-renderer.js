@@ -377,13 +377,11 @@
 
   function resolveCatConfig(catId, configOverride) {
     const CWS = window.CatWardrobeSystem;
-    if (configOverride) {
-      return CWS ? CWS.sanitizeCatConfig(catId, configOverride) : configOverride;
-    }
     if (CWS) {
-      return CWS.getCatConfig(catId);
+      const raw = configOverride || CWS.getCatConfig(catId);
+      return CWS.sanitizeCatConfig(catId, raw);
     }
-    return { collar: 'none', tag: 'none', neckwear: 'none', headwear: 'none', outfit: 'none', eyeAcc: 'none' };
+    return configOverride || { collar: 'none', tag: 'none', neckwear: 'none', headwear: 'none', outfit: 'none', eyeAcc: 'none' };
   }
 
   // =========================================================================
@@ -756,6 +754,61 @@
       ctx.beginPath();
       ctx.ellipse(-2, 4, rx, ry, -0.04, 0, Math.PI * 2);
       ctx.stroke();
+    } else if (o === 'outfit_tutu_pastel') {
+      // Boncuk Starter: Fluffy Layered Pastel Pink & Lavender Tutu Skirt (keeps cream chest & collar clear!)
+      const bounce = pose.tutuBounce || 0;
+      const drawLayer = (yOff, fill, stroke, rScale) => {
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2.1;
+        ctx.beginPath();
+        ctx.moveTo(-47, 2 + yOff + bounce * 0.5);
+        ctx.quadraticCurveTo(-36, -15 + yOff + bounce * 0.4, -18, -10 + yOff);
+        ctx.quadraticCurveTo(-6, -18 + yOff + bounce * 0.3, 6, -8 + yOff);
+        ctx.quadraticCurveTo(14, -2 + yOff, 12, 14 + yOff + bounce * 0.3);
+        ctx.quadraticCurveTo(-6, 23 * rScale + yOff + bounce * 0.6, -24, 21 * rScale + yOff + bounce * 0.7);
+        ctx.quadraticCurveTo(-42, 19 * rScale + yOff + bounce * 0.8, -47, 2 + yOff + bounce * 0.5);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      };
+      drawLayer(4, '#e9d8fd', '#8b6bc2', 1.04);
+      drawLayer(-1, '#fbc6da', '#b85078', 0.94);
+      // Satin waist ribbon & mini bow
+      ctx.fillStyle = '#ec6a9b';
+      ctx.strokeStyle = '#993458';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.ellipse(-16, -6 + bounce * 0.2, 7.5, 4.5, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(-7, -9 + bounce * 0.2, 7.5, 4.5, 0.3, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+    } else if (o === 'outfit_vest_gentleman') {
+      // Müezza Starter: Smart Warm Pastel Gentleman Knit Vest with Cream Shirt Trim & Gold Buttons!
+      ctx.fillStyle = '#5e7da8';
+      ctx.strokeStyle = '#293e5c';
+      ctx.lineWidth = 2.3;
+      ctx.beginPath();
+      ctx.ellipse(-2, 4, rx * 0.92, ry * 0.90, -0.04, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      // Subtle diamond argyle knit pattern
+      ctx.strokeStyle = 'rgba(219, 234, 254, 0.45)';
+      ctx.lineWidth = 1.5;
+      [-24, -8, 8].forEach(ax => {
+        ctx.beginPath();
+        ctx.moveTo(ax, -8); ctx.lineTo(ax + 7, 4); ctx.lineTo(ax, 16); ctx.lineTo(ax - 7, 4);
+        ctx.closePath(); ctx.stroke();
+      });
+      // Crisp cream shirt chest V & gold buttons
+      ctx.fillStyle = '#fffaf2';
+      ctx.strokeStyle = '#293e5c';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(16, -10); ctx.lineTo(34, -2); ctx.lineTo(24, 18); ctx.lineTo(14, 14);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f6cf65';
+      [4, 12].forEach(by => {
+        ctx.beginPath(); ctx.arc(16, by, 2.5, 0, Math.PI * 2); ctx.fill();
+      });
     } else if (o === 'outfit_ballerina') {
       // Pastel Pink Layered Ballerina Bodice & Bouncing Tutu Skirt!
       const bounce = pose.tutuBounce || 0;
@@ -1071,25 +1124,29 @@
   }
 
   // =========================================================================
-  // 8. COLLAR & SWINGING NAME TAG (Natural Pendulum Swing!)
+  // 8. COLLAR & SWINGING NAME TAG (Anatomical Neck Curve — ALWAYS Visible!)
   // =========================================================================
   function drawCollarAndTag(ctx, id, cfg, pose) {
     if (!cfg.collar || cfg.collar === 'none') return;
 
     const CWS = window.CatWardrobeSystem;
     const collarMeta = CWS ? CWS.COLLARS.find(c => c.id === cfg.collar) : null;
-    const baseCol = collarMeta ? collarMeta.color : '#f7a8c4';
-    const trimCol = collarMeta ? collarMeta.trim : '#c76187';
+    const baseCol = collarMeta ? collarMeta.color : '#f79ec0';
+    const trimCol = collarMeta ? collarMeta.trim : '#bd4c7a';
+
+    // Anchor cleanly along the visible front neck right underneath chin contour!
+    const nx = 28 + pose.headOffsetX * 0.45;
+    const ny = (id.isFluffy ? 6 : 4) + pose.headOffsetY * 0.45;
 
     ctx.save();
-    ctx.translate(22, -6);
-    ctx.rotate(0.42);
+    ctx.translate(nx, ny);
+    ctx.rotate(pose.headTilt * 0.25);
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
-    // Curved snug pastel collar band around cat's neck
+    // Anatomical curved U-band wrapping smoothly around the cat's neck!
     if (cfg.collar === 'collar_rainbow_star') {
-      const rg = ctx.createLinearGradient(-22, 0, 22, 0);
+      const rg = ctx.createLinearGradient(-26, -8, 24, 6);
       rg.addColorStop(0, '#f9a8d4');
       rg.addColorStop(0.35, '#fde047');
       rg.addColorStop(0.7, '#93c5fd');
@@ -1099,83 +1156,111 @@
       ctx.fillStyle = baseCol;
     }
     ctx.strokeStyle = trimCol;
-    ctx.lineWidth = 2.1;
+    ctx.lineWidth = 2.3;
 
-    rr(ctx, -22, -5, 44, 10, 5);
+    ctx.beginPath();
+    ctx.moveTo(-25, -10);
+    ctx.quadraticCurveTo(1, 5, 23, -7);
+    ctx.quadraticCurveTo(25, -2, 22, 2);
+    ctx.quadraticCurveTo(1, 14, -26, -1);
+    ctx.quadraticCurveTo(-28, -6, -25, -10);
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    // Decorative pearls or golden stitch on special collars
+    // Soft glossy highlight along upper edge of collar
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.42)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(-21, -7);
+    ctx.quadraticCurveTo(1, 6, 19, -5);
+    ctx.stroke();
+
+    // Special collar decorations (Pearls / Gold Stitch / Brass Buckle)
     if (cfg.collar === 'collar_pearl_lace') {
       ctx.fillStyle = '#ffffff';
-      [-14, -7, 0, 7, 14].forEach(px => {
-        ctx.beginPath(); ctx.arc(px, 0, 2.7, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#e69ab8';
+      ctx.lineWidth = 1.0;
+      [[-17, -4], [-9, 1], [0, 4], [9, 3], [16, -1]].forEach(([px, py]) => {
+        ctx.beginPath(); ctx.arc(px, py, 3.0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       });
     } else if (cfg.collar === 'collar_velvet_gold') {
       ctx.strokeStyle = '#fde047';
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 1.8;
       ctx.setLineDash([4, 3]);
-      ctx.beginPath(); ctx.moveTo(-17, 0); ctx.lineTo(17, 0); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-22, -5);
+      ctx.quadraticCurveTo(1, 9, 19, -2);
+      ctx.stroke();
       ctx.setLineDash([]);
+    } else if (cfg.collar === 'collar_navy_leather') {
+      // Classic brass buckle accent on side of navy collar!
+      ctx.fillStyle = '#f6cf65';
+      ctx.strokeStyle = '#8f6012';
+      ctx.lineWidth = 1.5;
+      rr(ctx, -14, -4, 8, 8, 2);
+      ctx.fill(); ctx.stroke();
     }
 
-    // Swinging Name Tag hanging cleanly at front of collar!
+    // Swinging Name Tag hanging cleanly below the front of the collar!
+    // If a bowtie/tie is also worn at center, shift tag slightly forward so BOTH stay 100% visible!
     if (cfg.tag && cfg.tag !== 'none') {
+      const hasCenterBowOrTie = cfg.neckwear === 'bowtie_classic' || cfg.neckwear === 'bowtie_silk_pink' || cfg.neckwear === 'tie_classic';
       ctx.save();
-      ctx.translate(10, 5);
-      ctx.rotate(-0.42 + pose.tagSwing);
+      ctx.translate(hasCenterBowOrTie ? 15 : 5, hasCenterBowOrTie ? 3 : 8);
+      ctx.rotate(pose.tagSwing);
 
       // Tiny gold ring clasp
       ctx.strokeStyle = '#d99a26';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath(); ctx.arc(0, 2, 2.6, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 2.0;
+      ctx.beginPath(); ctx.arc(0, 2, 2.8, 0, Math.PI * 2); ctx.stroke();
 
       if (cfg.tag === 'tag_heart') {
-        ctx.fillStyle = '#f995b7';
-        ctx.strokeStyle = '#a83c63';
-        ctx.lineWidth = 1.8;
-        drawHeartShape(ctx, 0, 11, 7.8);
+        ctx.fillStyle = '#f98ab1';
+        ctx.strokeStyle = '#9e335a';
+        ctx.lineWidth = 1.9;
+        drawHeartShape(ctx, 0, 12, 8.2);
         ctx.fill(); ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.65)';
-        ctx.beginPath(); ctx.arc(-2.5, 9, 1.8, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.68)';
+        ctx.beginPath(); ctx.arc(-2.6, 9.5, 1.9, 0, Math.PI * 2); ctx.fill();
       } else if (cfg.tag === 'tag_star') {
         ctx.fillStyle = '#fde047';
-        ctx.strokeStyle = '#b47a14';
-        ctx.lineWidth = 1.8;
-        drawStarShape(ctx, 0, 11, 8.8, 4.3, 5);
+        ctx.strokeStyle = '#a86e0c';
+        ctx.lineWidth = 1.9;
+        drawStarShape(ctx, 0, 12, 9.2, 4.5, 5);
         ctx.fill(); ctx.stroke();
       } else if (cfg.tag === 'tag_bell') {
         ctx.fillStyle = '#fbbf24';
         ctx.strokeStyle = '#92400e';
-        ctx.lineWidth = 1.8;
-        ctx.beginPath(); ctx.arc(0, 10, 6.8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.lineWidth = 1.9;
+        ctx.beginPath(); ctx.arc(0, 11, 7.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = '#78350f';
-        ctx.beginPath(); ctx.arc(0, 12.5, 2.0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.beginPath(); ctx.arc(-2.5, 7.8, 1.8, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 13.5, 2.1, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.72)';
+        ctx.beginPath(); ctx.arc(-2.6, 8.5, 1.9, 0, Math.PI * 2); ctx.fill();
       } else if (cfg.tag === 'tag_fish') {
         ctx.fillStyle = '#7dd3fc';
         ctx.strokeStyle = '#0369a1';
-        ctx.lineWidth = 1.7;
-        ctx.beginPath(); ctx.ellipse(1, 11, 7.5, 4.8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(-6, 11); ctx.lineTo(-10, 7); ctx.lineTo(-10, 15); ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#0c4a6e'; ctx.beginPath(); ctx.arc(4.5, 10, 1.2, 0, Math.PI * 2); ctx.fill();
+        ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.ellipse(1, 12, 7.8, 5.0, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-6.2, 12); ctx.lineTo(-10.5, 8); ctx.lineTo(-10.5, 16); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#0c4a6e'; ctx.beginPath(); ctx.arc(4.8, 11, 1.3, 0, Math.PI * 2); ctx.fill();
       } else if (cfg.tag === 'tag_crown') {
         ctx.fillStyle = '#f6cf65';
         ctx.strokeStyle = '#9c6e14';
-        ctx.lineWidth = 1.7;
+        ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.moveTo(-7, 15); ctx.lineTo(-8, 7); ctx.lineTo(-3, 11);
-        ctx.lineTo(0, 5); ctx.lineTo(3, 11); ctx.lineTo(8, 7); ctx.lineTo(7, 15);
+        ctx.moveTo(-7.5, 16); ctx.lineTo(-8.5, 8); ctx.lineTo(-3, 12);
+        ctx.lineTo(0, 5.5); ctx.lineTo(3, 12); ctx.lineTo(8.5, 8); ctx.lineTo(7.5, 16);
         ctx.closePath();
         ctx.fill(); ctx.stroke();
       } else if (cfg.tag === 'tag_moon') {
         ctx.fillStyle = '#e2e8f0';
         ctx.strokeStyle = '#64748b';
-        ctx.lineWidth = 1.7;
+        ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.arc(0, 11, 7.5, 0.4, Math.PI * 1.65);
-        ctx.quadraticCurveTo(-2, 11, 6.8, 14);
+        ctx.arc(0, 12, 7.8, 0.4, Math.PI * 1.65);
+        ctx.quadraticCurveTo(-2, 12, 7.0, 15);
         ctx.closePath();
         ctx.fill(); ctx.stroke();
       }
@@ -1187,15 +1272,19 @@
   }
 
   // =========================================================================
-  // 9. NECKWEAR (Flowing Scarves, Cute Bowties, Adventure Bandana, Garland!)
+  // 9. NECKWEAR (Scarves, Bowties, Striped Tie, Bandana, Flower Garland — ALWAYS Visible!)
   // =========================================================================
-  function drawNeckwear(ctx, cfg, pose) {
+  function drawNeckwear(ctx, id, cfg, pose) {
     const nw = cfg.neckwear;
     if (!nw || nw === 'none') return;
 
     const wave = pose.scarfWave * 16;
+    const nx = 28 + pose.headOffsetX * 0.45;
+    const ny = (id.isFluffy ? 6 : 4) + pose.headOffsetY * 0.45;
+
     ctx.save();
-    ctx.translate(22, -4);
+    ctx.translate(nx, ny);
+    ctx.rotate(pose.headTilt * 0.22);
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
@@ -1211,74 +1300,124 @@
       ctx.strokeStyle = palette.stroke;
       ctx.lineWidth = 2.1;
       ctx.beginPath();
-      ctx.moveTo(-10, -2);
-      ctx.bezierCurveTo(-22 - wave * 0.5, 4 - wave * 0.25, -34 - wave, 14 - wave * 0.5, -42 - wave * 1.1, 8 - wave * 0.7);
-      ctx.lineTo(-36 - wave * 1.0, 22 - wave * 0.5);
-      ctx.bezierCurveTo(-24 - wave * 0.6, 26 - wave * 0.2, -12, 14, -4, 8);
+      ctx.moveTo(-20, -4);
+      ctx.bezierCurveTo(-32 - wave * 0.5, 2 - wave * 0.25, -44 - wave, 12 - wave * 0.5, -52 - wave * 1.1, 6 - wave * 0.7);
+      ctx.lineTo(-46 - wave * 1.0, 19 - wave * 0.5);
+      ctx.bezierCurveTo(-34 - wave * 0.6, 23 - wave * 0.2, -20, 12, -12, 6);
       ctx.closePath();
       ctx.fill(); ctx.stroke();
 
       // Cozy front dangling scarf end
       ctx.beginPath();
-      ctx.moveTo(4, 2);
-      ctx.quadraticCurveTo(10 - wave * 0.2, 16, 6 - wave * 0.3, 28);
-      ctx.lineTo(-4 - wave * 0.25, 26);
-      ctx.quadraticCurveTo(-2, 14, -4, 4);
+      ctx.moveTo(8, 5);
+      ctx.quadraticCurveTo(14 - wave * 0.2, 18, 9 - wave * 0.3, 30);
+      ctx.lineTo(-2 - wave * 0.25, 28);
+      ctx.quadraticCurveTo(1, 16, -1, 6);
       ctx.closePath();
       ctx.fill(); ctx.stroke();
 
       // Knit stripes on front flap
       ctx.fillStyle = palette.stripe;
-      ctx.fillRect(-2 - wave * 0.18, 16, 9, 3.2);
-      ctx.fillRect(-3 - wave * 0.22, 21.5, 9, 2.5);
+      ctx.fillRect(0 - wave * 0.18, 17, 9.5, 3.2);
+      ctx.fillRect(-1 - wave * 0.22, 22.5, 9.5, 2.5);
 
-      // Soft cozy wrap around neck
+      // Soft curved cozy knit wrap hugging the neck!
       ctx.fillStyle = palette.main;
-      ctx.save();
-      ctx.rotate(0.36);
-      rr(ctx, -23, -6, 46, 13, 6.5);
-      ctx.fill(); ctx.stroke();
-      ctx.restore();
-    } else if (nw === 'bowtie_classic' || nw === 'bowtie_silk_pink') {
-      const isPink = nw === 'bowtie_silk_pink';
-      ctx.translate(10, 6);
-      ctx.rotate(pose.tagSwing * 0.45);
-      ctx.fillStyle = isPink ? '#f795b8' : '#5278b0';
-      ctx.strokeStyle = isPink ? '#9c3a5f' : '#253d63';
-      ctx.lineWidth = 2;
-      // Left & right plump silk bow loops
       ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.bezierCurveTo(-12, -10, -16, 10, 0, 2);
-      ctx.bezierCurveTo(16, 10, 12, -10, 0, 0);
+      ctx.moveTo(-26, -11);
+      ctx.quadraticCurveTo(1, 6, 24, -8);
+      ctx.quadraticCurveTo(27, -1, 23, 4);
+      ctx.quadraticCurveTo(1, 18, -27, 1);
+      ctx.quadraticCurveTo(-29, -5, -26, -11);
       ctx.closePath();
       ctx.fill(); ctx.stroke();
+    } else if (nw === 'bowtie_classic' || nw === 'bowtie_silk_pink') {
+      // Crisp, always-visible Bowtie perched cleanly right at the front throat!
+      const isPink = nw === 'bowtie_silk_pink';
+      ctx.save();
+      ctx.translate(4, 9);
+      ctx.rotate(pose.tagSwing * 0.38);
+      ctx.fillStyle = isPink ? '#f78cb3' : '#4a72b0';
+      ctx.strokeStyle = isPink ? '#963257' : '#1f365c';
+      ctx.lineWidth = 2.2;
+      // Plump tailored silk bow wings
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(-14, -12, -19, 12, 0, 3);
+      ctx.bezierCurveTo(19, 12, 14, -12, 0, 0);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Inner fold highlight
+      ctx.strokeStyle = isPink ? '#fbcfe8' : '#93c5fd';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-9, -1); ctx.lineTo(-4, 1);
+      ctx.moveTo(9, -1); ctx.lineTo(4, 1);
+      ctx.stroke();
       // Center silk knot
       ctx.fillStyle = isPink ? '#fbcfe8' : '#93c5fd';
-      ctx.beginPath(); ctx.arc(0, 1, 4.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = isPink ? '#963257' : '#1f365c';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath(); ctx.arc(0, 1.5, 4.8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    } else if (nw === 'tie_classic') {
+      // Müezza Male Starter: Smart Striped Sky-Navy Gentleman Necktie!
+      ctx.save();
+      ctx.translate(5, 8);
+      ctx.rotate(pose.tagSwing * 0.55);
+      // Pointed tie blade
+      ctx.fillStyle = '#486ca6';
+      ctx.strokeStyle = '#1e3357';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(-3.5, 4);
+      ctx.lineTo(3.5, 4);
+      ctx.lineTo(6.5, 22);
+      ctx.lineTo(0, 29);
+      ctx.lineTo(-6.5, 22);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Diagonal golden-sky gentleman stripes
+      ctx.strokeStyle = '#f6cf65';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(-4, 11); ctx.lineTo(4, 8);
+      ctx.moveTo(-5, 18); ctx.lineTo(5, 15);
+      ctx.moveTo(-3.5, 24); ctx.lineTo(3.5, 21.5);
+      ctx.stroke();
+      // Crisp Windsor knot at top
+      ctx.fillStyle = '#5e85c2';
+      ctx.strokeStyle = '#1e3357';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(-5.5, -2); ctx.lineTo(5.5, -2);
+      ctx.lineTo(3.5, 6); ctx.lineTo(-3.5, 6);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
     } else if (nw === 'bandana_adventure') {
       ctx.fillStyle = '#73b3e3';
       ctx.strokeStyle = '#2d587d';
-      ctx.lineWidth = 2.1;
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
-      ctx.moveTo(-12, -4);
-      ctx.quadraticCurveTo(6, -1, 20, 4);
-      ctx.lineTo(6 - wave * 0.15, 24);
+      ctx.moveTo(-20, -4);
+      ctx.quadraticCurveTo(2, 6, 20, -2);
+      ctx.lineTo(5 - wave * 0.15, 26);
       ctx.closePath();
       ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#fde047';
-      drawStarShape(ctx, 5, 10, 5.2, 2.5, 5);
+      drawStarShape(ctx, 4, 12, 5.4, 2.6, 5);
       ctx.fill();
     } else if (nw === 'necklace_flower') {
-      // Pastel spring daisy flower garland!
-      const spots = [[-14, -6, '#fbcfe8'], [-4, 0, '#fef08a'], [6, 5, '#ffffff'], [16, 7, '#c4b5fd']];
+      // Pastel spring daisy flower garland hugging front neck curve!
+      const spots = [[-16, -3, '#fbcfe8'], [-6, 4, '#fef08a'], [5, 7, '#ffffff'], [15, 2, '#c4b5fd']];
       spots.forEach(([fx, fy, col]) => {
         ctx.fillStyle = col;
         ctx.strokeStyle = '#9c6e82';
-        ctx.lineWidth = 1.4;
-        ctx.beginPath(); ctx.arc(fx, fy, 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(fx, fy, 5.8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = '#facc15';
-        ctx.beginPath(); ctx.arc(fx, fy, 2.1, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(fx, fy, 2.2, 0, Math.PI * 2); ctx.fill();
       });
     }
 
@@ -1595,31 +1734,7 @@
     ctx.lineCap = 'round';
 
     if (hw === 'head_astronaut_helmet') {
-      // Translucent Glossy Bubble Space Helmet around entire cat head (keeps ears & face visible!)
-      const bg = ctx.createRadialGradient(-10, -16, 10, 2, -2, 50);
-      bg.addColorStop(0, 'rgba(255, 255, 255, 0.34)');
-      bg.addColorStop(0.75, 'rgba(186, 230, 253, 0.22)');
-      bg.addColorStop(1, 'rgba(147, 197, 253, 0.42)');
-      ctx.fillStyle = bg;
-      ctx.strokeStyle = '#7ea8cc';
-      ctx.lineWidth = 3.0;
-      ctx.beginPath();
-      ctx.arc(2, -4, 46, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
-
-      // Specular glass highlight arc
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.lineWidth = 4.2;
-      ctx.beginPath();
-      ctx.arc(2, -4, 39, Math.PI * 1.12, Math.PI * 1.48);
-      ctx.stroke();
-
-      // White metal neck ring
-      ctx.fillStyle = '#e2e8f0';
-      ctx.strokeStyle = '#475569';
-      ctx.lineWidth = 2.2;
-      rr(ctx, -26, 26, 52, 9, 4.5);
-      ctx.fill(); ctx.stroke();
+      // Drawn in dedicated final glass overlay pass so collar stays neatly below neck ring!
       ctx.restore();
       return;
     }
@@ -1628,7 +1743,36 @@
     ctx.translate(0, pose.hatBob);
     ctx.rotate(pose.hatTilt);
 
-    if (hw === 'bow_pastel') {
+    if (hw === 'head_cap_boy') {
+      // Müezza Male Starter: Pastel Sky & Cream Sporty Cap with Forward Visor!
+      ctx.save();
+      ctx.translate(2, -31);
+      ctx.rotate(-0.04);
+      // Forward visor
+      ctx.fillStyle = '#5c9cd1';
+      ctx.strokeStyle = '#2a5278';
+      ctx.lineWidth = 2.1;
+      ctx.beginPath();
+      ctx.moveTo(4, 1);
+      ctx.quadraticCurveTo(26, -2, 36, 5);
+      ctx.quadraticCurveTo(22, 10, 2, 6);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Cap dome
+      ctx.fillStyle = '#96cbf5';
+      ctx.beginPath();
+      ctx.arc(-1, 3, 21, Math.PI, 0);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Cream front panel & top button
+      ctx.fillStyle = '#fff9ee';
+      ctx.beginPath();
+      ctx.arc(7, 2, 10, Math.PI * 1.15, Math.PI * 1.92);
+      ctx.lineTo(7, 2); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#f6cf65';
+      ctx.beginPath(); ctx.arc(-1, -18, 3.0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    } else if (hw === 'bow_pastel') {
       ctx.save();
       ctx.translate(-16, -24);
       ctx.rotate(-0.32 + pose.flowerWiggle);
@@ -1954,24 +2098,69 @@
     // 7. Near Hind Leg
     drawLeg(ctx, id, cfg, -28, 28, pose.backLegNear, false, true);
 
-    // 8. Collar & Swinging Name Tag
-    drawCollarAndTag(ctx, id, cfg, pose);
+    const isPawLifting = pose.frontNearLift > 0.05 || pose.frontNearReach > 0.05;
 
-    // 9. Neckwear (Scarf / Bowtie / Bandana / Flower Garland)
-    drawNeckwear(ctx, cfg, pose);
+    // 8. Near Front Leg (behind collar/neckwear during normal standing/running/jumping so collar stays crisp!)
+    if (!isPawLifting) {
+      drawLeg(ctx, id, cfg, 16, 28, pose.frontLegNear, true, true, 0, 0);
+    }
 
-    // 10. Near Front Leg (lifts toward collar or reaches playfully!)
-    drawLeg(ctx, id, cfg, 16, 28, pose.frontLegNear, true, true, pose.frontNearLift, pose.frontNearReach);
-
-    // 11. Near Fluttering Wing (Bee / Fairy)
+    // 9. Near Fluttering Wing (Bee / Fairy)
     if (cfg.outfit === 'outfit_bee' || cfg.outfit === 'outfit_fairy') {
       drawBackWingsAndCape(ctx, cfg, pose, false);
     }
 
-    // 12. Storybook Head, Twin Luminous Eyes, Whiskers, Glasses & Hat
+    // 10. Storybook Head, Twin Luminous Eyes, Whiskers, Glasses & Hat
     drawHeadGroup(ctx, id, cfg, pose);
 
-    // 13. Celebration / Interaction FX
+    // 11 & 12. Collar + Swinging Name Tag & Neckwear (Scarf / Bowtie / Tie / Bandana)
+    // Drawn IN FRONT OF head chin & chest fluff so collars & bowties are ALWAYS clearly visible!
+    // Smart layering: scarf/bandana wraps neatly behind collar+tag; bowtie/tie clips cleanly onto collar!
+    const isScarfOrBandana = cfg.neckwear === 'scarf_blue_knit' || cfg.neckwear === 'scarf_pink_pastel' || cfg.neckwear === 'scarf_lavender' || cfg.neckwear === 'bandana_adventure';
+    if (isScarfOrBandana) {
+      drawNeckwear(ctx, id, cfg, pose);
+      drawCollarAndTag(ctx, id, cfg, pose);
+    } else {
+      drawCollarAndTag(ctx, id, cfg, pose);
+      drawNeckwear(ctx, id, cfg, pose);
+    }
+
+    // 13. Near Front Leg when Lifting to Touch Collar or Bat Companion's Tag!
+    if (isPawLifting) {
+      drawLeg(ctx, id, cfg, 16, 28, pose.frontLegNear, true, true, pose.frontNearLift, pose.frontNearReach);
+    }
+
+    // 14. Translucent Glass Astronaut Helmet Bubble (over head, cleanly above collar!)
+    if (cfg.headwear === 'head_astronaut_helmet') {
+      ctx.save();
+      ctx.translate(30 + pose.headOffsetX, -24 + pose.headOffsetY);
+      ctx.rotate(pose.headTilt);
+      const bg = ctx.createRadialGradient(-10, -16, 10, 2, -2, 50);
+      bg.addColorStop(0, 'rgba(255, 255, 255, 0.34)');
+      bg.addColorStop(0.75, 'rgba(186, 230, 253, 0.22)');
+      bg.addColorStop(1, 'rgba(147, 197, 253, 0.42)');
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = '#7ea8cc';
+      ctx.lineWidth = 3.0;
+      ctx.beginPath();
+      ctx.arc(2, -4, 46, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 4.2;
+      ctx.beginPath();
+      ctx.arc(2, -4, 39, Math.PI * 1.12, Math.PI * 1.48);
+      ctx.stroke();
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 2.2;
+      rr(ctx, -26, 26, 52, 8.5, 4.2);
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+
+    // 15. Celebration / Interaction FX
     drawCatFX(ctx, pose, animTimer);
 
     ctx.restore();
